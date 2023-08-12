@@ -58,7 +58,6 @@ class Tag(db.Model):
         return f'<Tag tag_id={self.tag_id}, name={self.name}>'
 
 
-
 class Image(db.Model):
     """Data model for an image."""
 
@@ -70,17 +69,15 @@ class Image(db.Model):
     private = db.Column(db.Boolean, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     tag_id = db.Column(db.Integer, db.ForeignKey('tags.tag_id'))
-    
+
     # establishes foreign keys as two-way relationships
     user = db.relationship('User', foreign_keys=[user_id], backref='images')
     tag = db.relationship('Tag', foreign_keys=[tag_id], backref='images')
-
 
     def __repr__(self):
         """Display info about Image."""
 
         return f'<Image image_id={self.image_id}, url={self.url}>'
-
 
 
 def connect_to_db(flask_app, db_uri='postgresql:///pt', echo=True):
@@ -91,7 +88,7 @@ def connect_to_db(flask_app, db_uri='postgresql:///pt', echo=True):
     db.app = flask_app
     db.init_app(flask_app)
 
-    print('Connected to the db!')    
+    print('Connected to the db!')
 
 
 if __name__ == '__main__':

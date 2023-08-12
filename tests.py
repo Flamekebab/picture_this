@@ -3,13 +3,14 @@ from model import db, connect_to_db
 import unittest
 import test_seed_data
 
+
 class serverTests(unittest.TestCase):
     """Tests for Picture This app."""
 
     def setUp(self):
         """Code to run before every test."""
 
-        self.client = app.test_client() # test_client from Werkzeug library returns a "browser" to "run" app
+        self.client = app.test_client()  # test_client from Werkzeug library returns a "browser" to "run" app
         app.config['TESTING'] = True
 
     def test_homepage(self):

@@ -25,7 +25,8 @@ data = {
         ],
         'images': [
             {
-                'url': 'https://cdn.vox-cdn.com/thumbor/X-xVN1krqbh9Co35_AXiZRHRAUk=/0x26:640x453/1200x800/filters:focal(0x26:640x453)/cdn.vox-cdn.com/assets/1275052/kitten_field_jump.jpeg',
+                'url': 'https://cdn.vox-cdn.com/thumbor/X-xVN1krqbh9Co35_AXiZRHRAUk=/0x26:640x453/1200x800/filters'
+                       ':focal(0x26:640x453)/cdn.vox-cdn.com/assets/1275052/kitten_field_jump.jpeg',
                 'notes': 'leaping kitteh',
                 'private': False,
                 'user': 1,
