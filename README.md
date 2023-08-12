@@ -5,7 +5,7 @@ Picture This is a photo repository to store and categorize your favorite pics.
 
 ## Tech stack :books:  
 * Python/Flask with Unittest and bcrypt
-* SQL/PostgreSQL
+* SQL/SQLite
 * SQLAlchemy ORM
 * Jinja (HTML templating)
 * CSS/Bootstrap
@@ -39,9 +39,8 @@ Don't forget to log out!
 
 Requirements:
 Python3
-PostgreSQL
 
-To run locally (Mac):
+To run locally (*nix):
 
 1. Clone this repository to your machine:
 
@@ -49,7 +48,7 @@ To run locally (Mac):
 $ git clone https://github.com/coriography/picture_this
 ```
 
-2. Create virtual environment:
+2. Create virtual environment (wherever, whatever name you like):
 
 ```
 $ python3 -m venv env
@@ -95,7 +94,7 @@ $ python3 seed.py
 $ python3 server.py
 ```
 
-10. Go to localhost:5000 in your browser
+10. Go to localhost:1620 in your browser
 
 11. Create an account, or log in with existing account *guppy@thecat.com, badpw*
 
@@ -111,6 +110,7 @@ $ python3 server.py
 ## About the developer :woman_technologist:
 
 Built by [Cori Lint](https://github.com/coriography), with the help of Guppy the cat. :cat:
+Fiddled with by Morgan Fox.
 
 *Cori is cellist-turned-software engineer with a knack for motivating and inspiring others. As her career has evolved from performance, to production, to web design, to software engineering, she has continued to seek growth and creative solutions. Cori brings to the tech industry leadership abilities, persistence, focus, empathy, and good judgment, along with a strong set of technical skills and prior experience in web development. She is a Summa Cum Laude graduate of the University of Michigan, and an active member of Artists Who Code, an online community that advocates for creative professionals in the tech industry.*
 
