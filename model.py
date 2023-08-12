@@ -2,7 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 import bcrypt
 
-import os
+# import os
 
 db = SQLAlchemy()
 
@@ -80,7 +80,9 @@ class Image(db.Model):
         return f'<Image image_id={self.image_id}, url={self.url}>'
 
 
-def connect_to_db(flask_app, db_uri='postgresql:///pt', echo=True):
+# Nah, let's just use sqlite
+def connect_to_db(flask_app, db_uri='sqlite:///pt_database.db', echo=True):
+    # def connect_to_db(flask_app, db_uri='postgresql:///pt', echo=True):
     flask_app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
     # flask_app.config['SQLALCHEMY_ECHO'] = echo
     flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False

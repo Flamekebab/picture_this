@@ -150,4 +150,5 @@ def add_tag_from_form():
 
 if __name__ == "__main__":
     connect_to_db(app)
-    app.run(debug=True, host="0.0.0.0")
+    # "PT" = 16-20 (A=1, B=2)
+    app.run(debug=True, host="0.0.0.0", port=1620)
