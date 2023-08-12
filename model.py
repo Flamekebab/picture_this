@@ -2,7 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 import bcrypt
 
-import os
+# import os
 
 db = SQLAlchemy()
 
@@ -58,7 +58,6 @@ class Tag(db.Model):
         return f'<Tag tag_id={self.tag_id}, name={self.name}>'
 
 
-
 class Image(db.Model):
     """Data model for an image."""
 
@@ -70,11 +69,10 @@ class Image(db.Model):
     private = db.Column(db.Boolean, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     tag_id = db.Column(db.Integer, db.ForeignKey('tags.tag_id'))
-    
+
     # establishes foreign keys as two-way relationships
     user = db.relationship('User', foreign_keys=[user_id], backref='images')
     tag = db.relationship('Tag', foreign_keys=[tag_id], backref='images')
-
 
     def __repr__(self):
         """Display info about Image."""
@@ -84,7 +82,7 @@ class Image(db.Model):
 
 # Nah, let's just use sqlite
 def connect_to_db(flask_app, db_uri='sqlite:///pt_database.db', echo=True):
-# def connect_to_db(flask_app, db_uri='postgresql:///pt', echo=True):
+    # def connect_to_db(flask_app, db_uri='postgresql:///pt', echo=True):
     flask_app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
     # flask_app.config['SQLALCHEMY_ECHO'] = echo
     flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -92,7 +90,7 @@ def connect_to_db(flask_app, db_uri='sqlite:///pt_database.db', echo=True):
     db.app = flask_app
     db.init_app(flask_app)
 
-    print('Connected to the db!')    
+    print('Connected to the db!')
 
 
 if __name__ == '__main__':

@@ -21,7 +21,6 @@ for i in data:
     if 'images' in data[i]:
         for image in data[i]['images']:
             upload_image(image['url'], image['notes'], image['user'], image['private'], image['tag_id'])
-    
 
 if __name__ == '__main__':
     print("Database seed completed.")
