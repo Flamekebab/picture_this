@@ -88,7 +88,7 @@ def log_in_user():
     password = request.form['password']
 
     if helpers.check_email(email) is None:
-        flash(f'Email doesn\'t exist in database!')
+        flash(f"Email doesn't exist in database!")
         return redirect('/log_in')
     else:
         user = helpers.check_email(email)

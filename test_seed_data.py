@@ -16,8 +16,8 @@ def test_user():
 def test_image():
     """Creates test image in test database"""
     upload_image(
-        'https://s.keepmeme.com/files/en_posts/20200822/cc83fa3c7f8f8d04b3cdb12d65d57101confused-cat-with-a-lot-of'
-        '-question-marks.jpg',
+        "https://s.keepmeme.com/files/en_posts/20200822/cc83fa3c7f8f8d04b3cdb12d65d57101confused-cat-with-a-lot-of"
+        "-question-marks.jpg",
         'this cat is CONFUSE',
         1,
         False,
