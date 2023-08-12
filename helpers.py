@@ -1,3 +1,5 @@
+import os
+from urllib.request import urlretrieve
 from model import db, User, Image, Tag
 
 
@@ -45,6 +47,8 @@ def upload_image(url, notes, user_id, private=False, tag_id=None):
         private=private,
         tag_id=tag_id
     )
+    # Grab the filename from the url
+    os.path.splitext(image['url'].filepath)[1]
     db.session.add(image)
     db.session.commit()
 
