@@ -1,5 +1,6 @@
 import os
-from urllib.request import urlretrieve
+import urllib.request
+from urllib.parse import urlparse
 from model import db, User, Image, Tag
 
 
@@ -40,15 +41,39 @@ def register_user(username, email, password):
 ##### * Image upload and retrieval * #####
 
 def upload_image(url, notes, user_id, private=False, tag_id=None):
+    # Grab the filename from the url
+    image_filename = os.path.basename(urlparse(url).path)
+    # Extract the file extension - this will be handy later if wanting to recompress images
+    file_extension = os.path.splitext(image_filename)[1]
+
+    # Then we want to know what the last image_id was so that we can use it for the image's filename
+    last_image_id = db.session.query(Image.image_id).order_by(Image.image_id.desc()).limit(1).scalar()
+    if not last_image_id:
+        image_id = "1"
+    else:
+        image_id = str(last_image_id + 1)
+
+    # fetch the file - call it 1.something for this proof of concept
+    # This is complicated by needing user-agent stuff to stop webservers immediately ignoring the request
+    image_request = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)'})
+    response = urllib.request.urlopen(image_request)
+    # Assuming all goes well, output it to a file
+    if response.status == 200:
+        pass
+        with open(f"./pins/{image_id}{file_extension}", "wb") as file:
+            file.write(response.read())
+    else:
+        # This should probably be replaced with raising an exception when things are further along
+        print("Failed to grab image")
+
     image = Image(
         url=url,
         notes=notes,
         user_id=user_id,
         private=private,
-        tag_id=tag_id
+        tag_id=tag_id,
+        file_extension=file_extension
     )
-    # Grab the filename from the url
-    os.path.splitext(image['url'].filepath)[1]
     db.session.add(image)
     db.session.commit()
 

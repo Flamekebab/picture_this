@@ -5,8 +5,9 @@ from model import connect_to_db
 import helpers
 
 app = Flask(__name__)
-app.secret_key = os.environ["SECRET_KEY"]  # use key exported from secrets.sh
+app.secret_key = os.environ["PT_SECRET_KEY"]  # use key exported from secrets.sh or set an environment variable
 app.jinja_env.undefined = jinja2.StrictUndefined  # throw an error for an undefined Jinja var
+connect_to_db(app)
 
 
 ##### * RENDER PAGES * #####
@@ -149,6 +150,5 @@ def add_tag_from_form():
 
 
 if __name__ == "__main__":
-    connect_to_db(app)
     # "PT" = 16-20 (A=1, B=2)
     app.run(debug=True, host="0.0.0.0", port=1620)

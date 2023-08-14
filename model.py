@@ -1,8 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-
 import bcrypt
-
-# import os
 
 db = SQLAlchemy()
 
@@ -65,6 +62,7 @@ class Image(db.Model):
 
     image_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     url = db.Column(db.String, nullable=False)
+    file_extension = db.Column(db.String)
     notes = db.Column(db.String)
     private = db.Column(db.Boolean, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
@@ -80,9 +78,8 @@ class Image(db.Model):
         return f'<Image image_id={self.image_id}, url={self.url}>'
 
 
-# Nah, let's just use sqlite
+# Any SQLAlchemy compatible database should work and sqlite is fine as a starter
 def connect_to_db(flask_app, db_uri='sqlite:///pt_database.db', echo=True):
-    # def connect_to_db(flask_app, db_uri='postgresql:///pt', echo=True):
     flask_app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
     # flask_app.config['SQLALCHEMY_ECHO'] = echo
     flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -94,7 +91,7 @@ def connect_to_db(flask_app, db_uri='sqlite:///pt_database.db', echo=True):
 
 
 if __name__ == '__main__':
-    print("we're in model")
+    print("We're in model")
     from server import app
 
     connect_to_db(app)

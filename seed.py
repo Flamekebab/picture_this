@@ -1,6 +1,5 @@
 import server
 import model
-import os
 from helpers import *
 from seed_data import data
 
