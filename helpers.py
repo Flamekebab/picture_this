@@ -60,7 +60,7 @@ def upload_image(url, notes, user_id, private=False, tag_id=None):
     # Assuming all goes well, output it to a file
     if response.status == 200:
         pass
-        with open(f"./pins/{image_id}{file_extension}", "wb") as file:
+        with open(f"./static/images/{image_id}{file_extension}", "wb") as file:
             file.write(response.read())
     else:
         # This should probably be replaced with raising an exception when things are further along
@@ -97,3 +97,27 @@ def create_tag(name, icon, hex_code, user_id):
     db.session.commit()
 
     return tag
+
+
+def tagged_images_for_user(user_id, tag_string):
+    # Each tag has an associated user_id
+    # Get a list of tags by that name
+    selected_tag = Tag.query.filter(Tag.name == tag_string, Tag.user_id == user_id).first()
+    if selected_tag:
+        # The user has that tag, collect the images
+        tagged_images = Image.query.filter(Image.tag_id == selected_tag.tag_id).all()
+    else:
+        tagged_images = []
+    return tagged_images
+
+
+def delete_image(user_id, image_id):
+    # If the user has permission, delete the image
+    image = Image.query.filter(Image.image_id == image_id, Image.user_id == user_id).first()
+    if image:
+        os.remove(f"./static/images/{image_id}{image.file_extension}")
+        db.session.delete(image)
+        db.session.commit()
+        return True
+    else:
+        return False

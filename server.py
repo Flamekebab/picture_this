@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, flash, redirect, session
+from flask import Flask, render_template, request, flash, redirect, session, url_for
 import jinja2
 import os
 from model import connect_to_db
@@ -10,7 +10,7 @@ app.jinja_env.undefined = jinja2.StrictUndefined  # throw an error for an undefi
 connect_to_db(app)
 
 
-##### * RENDER PAGES * #####
+# * RENDER PAGES * #
 
 @app.route("/")
 def go_home():
@@ -35,7 +35,41 @@ def show_my_board():
     else:
         user = None
 
-    return render_template("my_board.html", user=user)
+    return render_template("my_images.html", user=user, images=user.images)
+
+
+@app.route("/delete/<int:image_id>")
+def delete_image(image_id):
+    """
+    Delete image by ID
+
+    :param image_id: (int) ID of image to be deleted
+    :return:
+    """
+    if 'user_id' in session:
+        if helpers.delete_image(session['user_id'], image_id):
+            message = "Image deleted successfully"
+        else:
+            message = "Failed to delete image"
+    else:
+        message = "Login to delete images"
+
+    flash(message, "message")
+    return redirect(request.referrer)
+
+
+@app.route("/tag/<string:selected_tag>")
+def show_single_tag(selected_tag):
+    """Return a board for a single tag - restricted to tags the user has access to."""
+
+    if 'user_id' in session:
+        user = helpers.get_user_by_user_id(session['user_id'])
+        tagged_images = helpers.tagged_images_for_user(session['user_id'], selected_tag)
+    else:
+        user = None
+        tagged_images = None
+
+    return render_template("single_tag_board.html", user=user, selected_tag=selected_tag, images=tagged_images)
 
 
 @app.route("/upload")
@@ -62,7 +96,8 @@ def show_tags_page():
     return render_template("tags.html", user=user)
 
 
-##### * API * #####
+# * API * #
+# TODO: secure the API
 
 @app.route('/api/register_user', methods=['POST'])
 def register_new_user():
@@ -73,7 +108,8 @@ def register_new_user():
     password = request.form['password']
 
     if helpers.check_username(username) is None and helpers.check_email(email) is None:
-        user = helpers.register_user(username, email, password)
+        # user = helpers.register_user(username, email, password)
+        helpers.register_user(username, email, password)
         flash(f'Account created!')
         return redirect('/log_in')
     else:
@@ -99,7 +135,8 @@ def log_in_user():
         session['user_id'] = user.user_id
         session['username'] = user.username
         flash('Successfully logged in!')
-        return render_template('/my_board.html', user=user)
+        # return render_template('/my_images.html', user=user, images=user.images)
+        return redirect(url_for("show_my_board"))
     else:
         flash('Incorrect password!')
         return redirect('/log_in')
@@ -114,6 +151,7 @@ def log_out():
 
 @app.route('/api/upload', methods=['POST'])
 def user_upload_from_form():
+    # We should probably require some login credentials here..
     url = request.form['url']
     notes = request.form['notes']
     user_id = session['user_id']

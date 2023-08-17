@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<div class="container">
+    <h1>My Images</h1>
+    {% if user %}
+        <div class="mb-4">
+            <a class="btn btn-primary" href="/upload">Upload photos</a>
+        </div>
+            {% include 'images.html' %}
+
+    {% else %}
+        <p>Please <a href="/log_in">log in</a> to access this page.</p>
+    {% endif %}
+</div>
+    
+
+{% endblock %}

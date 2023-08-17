@@ -11,10 +11,7 @@
 
                 {% if user['tags'] %}
                     {% for tag in user['tags'] %}
-                        <button class="btn btn-secondary" value="{{tag.tag_id}}">
-                            <i class="{{tag.icon}} mr-2"></i> 
-                            {{tag.name}}
-                        </button>
+                        <a class="btn btn-secondary d-inline" href="/tag/{{tag.name}}"><i class="{{tag.icon}} mr-2"></i>{{tag.name}}</a>
                     {% endfor %}
                 {% endif %}
             </div>
