@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, flash, redirect, session, url_for
+from flask import Flask, render_template, request, flash, redirect, session, url_for, send_from_directory
 import jinja2
 import os
 from model import connect_to_db
@@ -8,9 +8,17 @@ app = Flask(__name__)
 app.secret_key = os.environ["PT_SECRET_KEY"]  # use key exported from secrets.sh or set an environment variable
 app.jinja_env.undefined = jinja2.StrictUndefined  # throw an error for an undefined Jinja var
 connect_to_db(app)
+app.config['UPLOAD_FOLDER'] = "uploads"
+# 16 MB limit for images
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1000 * 1000
 
+
+@app.route('/uploads/<path:filename>')
+def uploads(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 # * RENDER PAGES * #
+
 
 @app.route("/")
 def go_home():
@@ -47,7 +55,7 @@ def delete_image(image_id):
     :return:
     """
     if 'user_id' in session:
-        if helpers.delete_image(session['user_id'], image_id):
+        if helpers.delete_image(session['user_id'], image_id, upload_dir=app.config['UPLOAD_FOLDER']):
             message = "Image deleted successfully"
         else:
             message = "Failed to delete image"
@@ -161,9 +169,10 @@ def user_upload_from_form():
         private = False
     tag_id = request.form['tag_id']
 
-    helpers.upload_image(url, notes, user_id, private, tag_id)
-
-    flash('Upload success message')
+    if helpers.upload_image(url, notes, user_id, private, tag_id, app.config['UPLOAD_FOLDER']):
+        flash('Image added!')
+    else:
+        flash('Upload failed')
 
     return redirect('/my_board')
 
