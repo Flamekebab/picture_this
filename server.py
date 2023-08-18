@@ -20,18 +20,22 @@ def uploads(filename):
 # * RENDER PAGES * #
 
 
-@app.route("/")
-def go_home():
+@app.route("/register")
+def register():
     """Return home page."""
 
-    return render_template("home.html")
+    return render_template("register.html")
 
 
 @app.route("/log_in")
+@app.route("/")
 def show_login():
     """Return login page."""
-
-    return render_template("login.html")
+    if 'user_id' in session:
+        user = helpers.get_user_by_user_id(session['user_id'])
+        return render_template("my_images.html", user=user, images=user.images)
+    else:
+        return render_template("login.html")
 
 
 @app.route("/my_board")
