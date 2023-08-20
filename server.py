@@ -3,6 +3,8 @@ import jinja2
 import os
 from model import connect_to_db
 import helpers
+import logging
+
 
 app = Flask(__name__)
 app.secret_key = os.environ["PT_SECRET_KEY"]  # use key exported from secrets.sh or set an environment variable
@@ -11,6 +13,9 @@ connect_to_db(app)
 app.config['UPLOAD_FOLDER'] = "uploads"
 # 16 MB limit for images
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1000 * 1000
+
+# Whilst doing dev work let's do some logging - I'm going to need it.
+logging.basicConfig(level=logging.DEBUG)
 
 
 @app.route('/uploads/<path:filename>')
@@ -40,14 +45,13 @@ def show_login():
 
 @app.route("/my_board")
 def show_my_board():
-    """Return My Board page."""
-
+    """Return My Board page. Images are shown in reverse order - i.e. newest first"""
     if 'user_id' in session:
         user = helpers.get_user_by_user_id(session['user_id'])
     else:
         user = None
 
-    return render_template("my_images.html", user=user, images=user.images)
+    return render_template("my_images.html", user=user, images=list(reversed(user.images)))
 
 
 @app.route("/delete/<int:image_id>")
@@ -164,19 +168,31 @@ def log_out():
 @app.route('/api/upload', methods=['POST'])
 def user_upload_from_form():
     # We should probably require some login credentials here..
-    url = request.form['url']
+    app.logger.debug(f"{request.form}")
+
     notes = request.form['notes']
     user_id = session['user_id']
+    tag_id = request.form['tag_id']
+    # This may or may not be used but is always present
+    url = request.form['url']
+
+    # Currently this isn't implemented
     if 'private' in request.form:
         private = True
     else:
         private = False
-    tag_id = request.form['tag_id']
 
-    if helpers.upload_image(url, notes, user_id, private, tag_id, app.config['UPLOAD_FOLDER']):
-        flash('Image added!')
+    if "attached-file" in request.files and request.form['file-or-url'] == "file":
+        if helpers.upload_image(
+                request.files['attached-file'], notes, user_id, private, tag_id, app.config['UPLOAD_FOLDER'], "file"):
+            flash('Image added!')
+        else:
+            flash('Upload failed')
     else:
-        flash('Upload failed')
+        if helpers.upload_image(url, notes, user_id, private, tag_id, app.config['UPLOAD_FOLDER'], "url"):
+            flash('Image added!')
+        else:
+            flash('Upload failed')
 
     return redirect('/my_board')
 

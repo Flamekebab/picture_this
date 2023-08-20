@@ -3,8 +3,10 @@ import urllib.request
 from urllib.parse import urlparse
 from PIL import Image as PillowImage
 from werkzeug.utils import secure_filename
-
+import logging
 from model import db, User, Image, Tag
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 # * General queries * #
@@ -43,62 +45,92 @@ def register_user(username, email, password):
 
 # * Image upload and retrieval * #
 
-def upload_image(url, notes, user_id, private=False, tag_id=None, upload_dir="uploads"):
-    # Run some checks on the URL (e.g. file types)
-    if not upload_url_checker(url):
-        return False
+def upload_image(input_image, notes, user_id, private=False, tag_id=None, upload_dir="uploads", file_or_url="url"):
+    # We want to know what the last image_id was so that we can use it for the image's filename
+    last_image_id = db.session.query(Image.image_id).order_by(Image.image_id.desc()).limit(1).scalar()
+    if not last_image_id:
+        image_id = "1"
     else:
-        # Grab the filename from the url
-        # These days Imgur does stuff like this:
-        # https://i.imgur.com/U0vI1I3_d.webp?maxwidth=1520&fidelity=grand
-        # Removing the parameters gives a thumbnail, so it must be included
-        # Extract the file extension - this will be handy later if wanting to recompress images
-        filename_without_params = os.path.basename(urlparse(url).path)
-        filename_without_params = secure_filename(filename_without_params)
-        file_extension = os.path.splitext(filename_without_params)[1].lower()
+        image_id = str(last_image_id + 1)
 
-        # Then we want to know what the last image_id was so that we can use it for the image's filename
-        last_image_id = db.session.query(Image.image_id).order_by(Image.image_id.desc()).limit(1).scalar()
-        if not last_image_id:
-            image_id = "1"
-        else:
-            image_id = str(last_image_id + 1)
-
-        # fetch the file - call it 1.something for this proof of concept
-        # This is complicated by needing user-agent stuff to stop webservers immediately ignoring the request
-        image_request = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)'})
-        response = urllib.request.urlopen(image_request)
-        # Assuming all goes well, output it to a file
-        if response.status == 200:
-            # with open(f"./static/images/{image_id}{file_extension}", "wb") as file:)
-            with open(f"{upload_dir}/{image_id}{file_extension}", "wb") as file:
-                file.write(response.read())
-            # Check if it could be recompressed
-            if file_extension != ".gif" and file_extension != ".webp":
-                if webp_if_larger(f"{upload_dir}/{image_id}{file_extension}"):
-                    # The Webp version is smaller - update the file extension
-                    file_extension = ".webp"
-            image = Image(
-                url=url,
-                notes=notes,
-                user_id=user_id,
-                private=private,
-                tag_id=tag_id,
-                file_extension=file_extension
-            )
-            db.session.add(image)
-            db.session.commit()
-
-            return image
-
-        else:
+    # The user could supply a file or a URL.
+    if file_or_url == "url":
+        # Run some checks on the URL (e.g. file types)
+        if not upload_url_checker(input_image):
             return False
+        else:
+            # Grab the filename from the url
+            # These days Imgur does stuff like this:
+            # https://i.imgur.com/U0vI1I3_d.webp?maxwidth=1520&fidelity=grand
+            # Removing the parameters gives a thumbnail, so it must be included
+            # Extract the file extension - this will be handy later if wanting to recompress images
+            filename_without_params = os.path.basename(urlparse(input_image).path)
+            filename_without_params = secure_filename(filename_without_params)
+            file_extension = os.path.splitext(filename_without_params)[1].lower()
+
+            # fetch the file
+            # This is complicated by needing user-agent stuff to stop webservers immediately ignoring the request
+            image_request = urllib.request.Request(input_image,
+                                                   headers={'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)'})
+            response = urllib.request.urlopen(image_request)
+            # Assuming all goes well, output it to a file
+            if response.status == 200:
+                # with open(f"./static/images/{image_id}{file_extension}", "wb") as file:)
+                with open(f"{upload_dir}/{image_id}{file_extension}", "wb") as file:
+                    file.write(response.read())
+                url = input_image
+            else:
+                return False
+    else:
+        # Deal with a local file instead
+        logging.info(f"File to add: {input_image.filename}")
+        input_image.filename = secure_filename(input_image.filename)
+        file_extension = os.path.splitext(input_image.filename)[1].lower()
+        # Save the file locally
+        try:
+            input_image.save(os.path.join(upload_dir, f"{image_id}{file_extension}"))
+        except Exception as exc:
+            logging.debug(f"Failed to save file: {exc}")
+            return False
+        # Assuming things go well, set the url value to blank:
+        url = ""
+
+    # Now that we have a file locally, attempt to recompress it and then stick it in the DB
+    # Check if it can be recompressed
+    if file_extension != ".gif" and file_extension != ".webp":
+        if webp_if_larger(f"{upload_dir}/{image_id}{file_extension}"):
+            # The Webp version is smaller - update the file extension
+            file_extension = ".webp"
+
+    # Construct the image object - the url is a blank string if it's a file upload
+    image = Image(
+        url=url,
+        notes=notes,
+        user_id=user_id,
+        private=private,
+        tag_id=tag_id,
+        file_extension=file_extension
+    )
+    db.session.add(image)
+    db.session.commit()
+
+    return image
 
 
 def upload_url_checker(requested_url):
     allowed_extensions = {'.webp', '.png', '.jpg', '.jpeg', '.gif'}
     filename = os.path.basename(urlparse(requested_url).path)
     file_extension = os.path.splitext(filename)[1]
+    valid = True
+    if file_extension.lower() not in allowed_extensions:
+        valid = False
+    return valid
+
+
+def uploaded_file_checker(filename):
+    allowed_extensions = {'.webp', '.png', '.jpg', '.jpeg', '.gif'}
+    filename = os.path.basename(filename)
+    file_extension = os.path.splitext(filename)[1].lower()
     valid = True
     if file_extension.lower() not in allowed_extensions:
         valid = False
