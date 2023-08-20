@@ -5,7 +5,7 @@ from helpers import *
 def test_all():
     test_user()
     test_image()
-    test_tag()
+    test_board()
 
 
 def test_user():
@@ -25,13 +25,13 @@ def test_image():
     )
 
 
-def test_tag():
-    """Creates test tag in test database"""
+def test_board():
+    """Creates test board in test database"""
 
-    tester_tag = Tag(
+    tester_board = Board(
         name='honey badgers',
         icon='fas fa-badger-honey',
         hex_code='#FFC0CB',
         user_id=1)
-    db.session.add(tester_tag)
+    db.session.add(tester_board)
     db.session.commit()

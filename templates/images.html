@@ -2,10 +2,10 @@
     {% for image in images %}
         <div class="col-lg-4 mb-5">
             <img class="img-fluid mb-2" src="{{ url_for('uploads', filename=image.image_id ~ image.file_extension) }}" alt="">
-            {% if image.tag %}
-            <a class="btn btn-secondary d-inline" href="/tag/{{image.tag.name}}"><i class="{{image.tag.icon}} mr-2"></i>{{image.tag.name}}</a>
+            {% if image.board %}
+            <a class="btn btn-secondary d-inline" href="/board/{{image.board.name}}"><i class="{{image.board.icon}} mr-2"></i>{{image.board.name}}</a>
             {% else %}
-            <p>no tag</p>
+            <p>no board</p>
             {% endif %}
             {% if image.notes %}
             <p class="small d-inline ml-2">{{image.notes}}</p>

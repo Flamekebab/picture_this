@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 from PIL import Image as PillowImage
 from werkzeug.utils import secure_filename
 import logging
-from model import db, User, Image, Tag
+from model import db, User, Image, Board
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -45,7 +45,7 @@ def register_user(username, email, password):
 
 # * Image upload and retrieval * #
 
-def upload_image(input_image, notes, user_id, private=False, tag_id=None, upload_dir="uploads", file_or_url="url"):
+def upload_image(input_image, notes, user_id, private=False, board_id=None, upload_dir="uploads", file_or_url="url"):
     # We want to know what the last image_id was so that we can use it for the image's filename
     last_image_id = db.session.query(Image.image_id).order_by(Image.image_id.desc()).limit(1).scalar()
     if not last_image_id:
@@ -108,7 +108,7 @@ def upload_image(input_image, notes, user_id, private=False, tag_id=None, upload
         notes=notes,
         user_id=user_id,
         private=private,
-        tag_id=tag_id,
+        board_id=board_id,
         file_extension=file_extension
     )
     db.session.add(image)
@@ -166,31 +166,31 @@ def get_images_by_user(user_id):
     return Image.query.filter(Image.user_id == user_id).all()
 
 
-# * Tags * #
+# * Boards * #
 
-def create_tag(name, icon, hex_code, user_id):
-    tag = Tag(
+def create_board(name, icon, hex_code, user_id):
+    board = Board(
         name=name,
         icon=icon,
         hex_code=hex_code,
         user_id=user_id
     )
-    db.session.add(tag)
+    db.session.add(board)
     db.session.commit()
 
-    return tag
+    return board
 
 
-def tagged_images_for_user(user_id, tag_string):
-    # Each tag has an associated user_id
-    # Get a list of tags by that name
-    selected_tag = Tag.query.filter(Tag.name == tag_string, Tag.user_id == user_id).first()
-    if selected_tag:
-        # The user has that tag, collect the images
-        tagged_images = Image.query.filter(Image.tag_id == selected_tag.tag_id).all()
+def board_images_for_user(user_id, board_string):
+    # Each board has an associated user_id
+    # Get a list of boards by that name
+    selected_board = Board.query.filter(Board.name == board_string, Board.user_id == user_id).first()
+    if selected_board:
+        # The user has that board, collect the images
+        board_images = Image.query.filter(Image.board_id == selected_board.board_id).all()
     else:
-        tagged_images = []
-    return tagged_images
+        board_images = []
+    return board_images
 
 
 def delete_image(user_id, image_id, upload_dir="uploads"):

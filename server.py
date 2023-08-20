@@ -43,9 +43,10 @@ def show_login():
         return render_template("login.html")
 
 
-@app.route("/my_board")
-def show_my_board():
-    """Return My Board page. Images are shown in reverse order - i.e. newest first"""
+@app.route("/my_images")
+def my_images():
+    """Return My Images page - all the images a user has uploaded.
+    Images are shown in reverse order - i.e. newest first"""
     if 'user_id' in session:
         user = helpers.get_user_by_user_id(session['user_id'])
     else:
@@ -74,18 +75,18 @@ def delete_image(image_id):
     return redirect(request.referrer)
 
 
-@app.route("/tag/<string:selected_tag>")
-def show_single_tag(selected_tag):
-    """Return a board for a single tag - restricted to tags the user has access to."""
+@app.route("/board/<string:selected_board>")
+def show_single_board(selected_board):
+    """Return a board - restricted to boards the user has access to."""
 
     if 'user_id' in session:
         user = helpers.get_user_by_user_id(session['user_id'])
-        tagged_images = helpers.tagged_images_for_user(session['user_id'], selected_tag)
+        board_images = helpers.board_images_for_user(session['user_id'], selected_board)
     else:
         user = None
-        tagged_images = None
+        board_images = None
 
-    return render_template("single_tag_board.html", user=user, selected_tag=selected_tag, images=tagged_images)
+    return render_template("single_board.html", user=user, selected_board=selected_board, images=board_images)
 
 
 @app.route("/upload")
@@ -100,16 +101,16 @@ def show_upload_page():
     return render_template("upload.html", user=user)
 
 
-@app.route("/tags")
-def show_tags_page():
-    """Return Tags page."""
+@app.route("/boards")
+def show_boards_page():
+    """Return Boards page."""
 
     if 'user_id' in session:
         user = helpers.get_user_by_user_id(session['user_id'])
     else:
         user = None
 
-    return render_template("tags.html", user=user)
+    return render_template("boards.html", user=user)
 
 
 # * API * #
@@ -151,8 +152,7 @@ def log_in_user():
         session['user_id'] = user.user_id
         session['username'] = user.username
         flash('Successfully logged in!')
-        # return render_template('/my_images.html', user=user, images=user.images)
-        return redirect(url_for("show_my_board"))
+        return redirect(url_for("my_images"))
     else:
         flash('Incorrect password!')
         return redirect('/log_in')
@@ -172,7 +172,7 @@ def user_upload_from_form():
 
     notes = request.form['notes']
     user_id = session['user_id']
-    tag_id = request.form['tag_id']
+    board_id = request.form['board_id']
     # This may or may not be used but is always present
     url = request.form['url']
 
@@ -184,29 +184,29 @@ def user_upload_from_form():
 
     if "attached-file" in request.files and request.form['file-or-url'] == "file":
         if helpers.upload_image(
-                request.files['attached-file'], notes, user_id, private, tag_id, app.config['UPLOAD_FOLDER'], "file"):
+                request.files['attached-file'], notes, user_id, private, board_id, app.config['UPLOAD_FOLDER'], "file"):
             flash('Image added!')
         else:
             flash('Upload failed')
     else:
-        if helpers.upload_image(url, notes, user_id, private, tag_id, app.config['UPLOAD_FOLDER'], "url"):
+        if helpers.upload_image(url, notes, user_id, private, board_id, app.config['UPLOAD_FOLDER'], "url"):
             flash('Image added!')
         else:
             flash('Upload failed')
 
-    return redirect('/my_board')
+    return redirect('/my_images')
 
 
-@app.route('/api/add_tag', methods=['POST'])
-def add_tag_from_form():
+@app.route('/api/add_board', methods=['POST'])
+def add_board_from_form():
     name = request.form['name']
     icon = request.form['icon']
     color = '#e0a356'  # TODO: make this dynamic
     user_id = request.form['user_id']
 
-    helpers.create_tag(name, icon, color, user_id)
+    helpers.create_board(name, icon, color, user_id)
 
-    flash('Tag created successfully')
+    flash('Board created successfully')
 
     if 'user_id' in session:
         user = helpers.get_user_by_user_id(session['user_id'])

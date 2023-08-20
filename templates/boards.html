@@ -7,18 +7,18 @@
     <div class="row justify-content-center">
         <div class="col-lg-6">
             <div class="mb-4">
-                <h1>My tags</h1>
+                <h1>My Boards</h1>
 
-                {% if user['tags'] %}
-                    {% for tag in user['tags'] %}
-                        <a class="btn btn-secondary d-inline" href="/tag/{{tag.name}}"><i class="{{tag.icon}} mr-2"></i>{{tag.name}}</a>
+                {% if user['boards'] %}
+                    {% for board in user['boards'] %}
+                        <a class="btn btn-secondary d-inline" href="/board/{{board.name}}"><i class="{{board.icon}} mr-2"></i>{{board.name}}</a>
                     {% endfor %}
                 {% endif %}
             </div>
             
 
-            <form action="/api/add_tag" method="POST">
-                <h4>add new tag</h4>
+            <form action="/api/add_board" method="POST">
+                <h4>add new board</h4>
                 <div class="form-group">
                     <label>Name:</label>
                     <input class="form-control" type="text" name="name">
