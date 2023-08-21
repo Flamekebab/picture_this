@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import urllib.request
 from urllib.parse import urlparse
 from PIL import Image as PillowImage
@@ -102,8 +103,12 @@ def upload_image(input_image, notes, user_id, private=False, board_id=None, uplo
             # The Webp version is smaller - update the file extension
             file_extension = ".webp"
 
+    # Generate the thumbnail
+    thumbnail_generator(f"{upload_dir}/{image_id}{file_extension}")
+
     # Construct the image object - the url is a blank string if it's a file upload
     image = Image(
+        thumbnail=f"thumbnails/{image_id}.webp",
         url=url,
         notes=notes,
         user_id=user_id,
@@ -141,6 +146,18 @@ def uploaded_file_checker(filename):
     if file_extension.lower() not in allowed_extensions:
         valid = False
     return valid
+
+
+def thumbnail_generator(image_path):
+    # Extract the necessary components to minimise dependencies on other bits of code
+    upload_dir = os.path.split(image_path)[0]
+    filename = Path(image_path).stem
+
+    output_path = f"{upload_dir}/thumbnails/{filename}.webp"
+    image = PillowImage.open(image_path)
+    thumbnail_size = 640, 480
+    image.thumbnail(thumbnail_size)
+    image.save(output_path, 'webp', quality=80)
 
 
 def board_thumbnail_set(board_id, image_id):
@@ -217,6 +234,7 @@ def delete_image(user_id, image_id, upload_dir="uploads"):
     image = Image.query.filter(Image.image_id == image_id, Image.user_id == user_id).first()
     if image:
         os.remove(f"{upload_dir}/{image_id}{image.file_extension}")
+        os.remove(f"{upload_dir}/thumbnails/{image_id}.webp")
         db.session.delete(image)
         db.session.commit()
         return True

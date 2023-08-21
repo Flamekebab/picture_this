@@ -62,6 +62,7 @@ class Image(db.Model):
     __tablename__ = "images"
 
     image_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+    thumbnail = db.Column(db.String)
     url = db.Column(db.String, nullable=False)
     file_extension = db.Column(db.String)
     notes = db.Column(db.String)

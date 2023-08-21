@@ -1,7 +1,9 @@
 <div class="row justify-content-center">
     {% for image in images %}
         <div class="col px-1 pt-1 h-100 m-1 card col-sm-3">
-            <img class="img-fluid mb-2 card-img-top" src="{{ url_for('uploads', filename=image.image_id ~ image.file_extension) }}" alt="">
+            <a href="{{ url_for('uploads', filename=image.image_id ~ image.file_extension) }}">
+                <img class="img-fluid mb-2 card-img-top" src="{{ url_for('uploads', filename=image.thumbnail) }}" alt="">
+            </a>
             <div class="card-body">
                 {% if image.notes %}
                     <p class="card-text">{{image.notes}}</p>
