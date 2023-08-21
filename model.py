@@ -38,6 +38,7 @@ class Board(db.Model):
     __tablename__ = "boards"
 
     board_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+    thumbnail = db.Column(db.String)
     name = db.Column(db.String(15), nullable=False)
     icon = db.Column(db.String(50), nullable=False)
     hex_code = db.Column(db.String(15), nullable=False)
@@ -91,7 +92,7 @@ def connect_to_db(flask_app, db_uri='sqlite:///pt_database.db', echo=True):
 
 
 if __name__ == '__main__':
-    print("We're in model")
     from server import app
-
     connect_to_db(app)
+    # This file can be run to debug database queries
+    # Y'know... here

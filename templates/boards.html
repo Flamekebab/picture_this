@@ -5,16 +5,36 @@
 
     {% if user %}
     <div class="row justify-content-center">
-        <div class="col-lg-6">
+        <div class="col-lg-7">
             <div class="mb-4">
                 <h1>My Boards</h1>
-
-                {% if user['boards'] %}
-                    {% for board in user['boards'] %}
-                        <a class="btn btn-secondary d-inline" href="/board/{{board.name}}"><i class="{{board.icon}} mr-2"></i>{{board.name}}</a>
-                    {% endfor %}
-                {% endif %}
             </div>
+
+            {% if user['boards'] %}
+            <div class="container pb-4">
+                <div class="row">
+                {% for board in user['boards'] %}
+                    <div class="card col px-1 pt-1 h-100 m-1">
+                        <a href="/board/{{board.name}}" style="text-decoration:none">
+                            <div class="board-thumb-container position-relative">
+                                {% if board.thumbnail %}
+                                <img src="{{ url_for('uploads', filename=board.thumbnail) }}" class="card-img-top">
+                                {% else %}
+                                <img class="card-img-top" style="width: 500px; height: 500px;">
+                                {% endif %}
+                                <i class="{{board.icon}} position-absolute top-50 start-50 translate-middle mr-2 fs-1 board-icon-large"></i>
+                            </div>
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    {{board.name}}
+                                </h6>
+                            </div>
+                        </a>
+                    </div>
+                {% endfor %}
+                </div>
+            </div>
+            {% endif %}
             
 
             <form action="/api/add_board" method="POST">
@@ -27,7 +47,7 @@
                 <div class="form-group">
                     <label>Icon:</label>
                     <p class="small">search free icons <a href="https://fontawesome.com/icons?d=gallery&p=2&m=free" target="_blank">here</a>. copy class name (e.g. "fas fa-cat") and paste below.</p>
-                    <input class="form-control" type="textarea" name="icon" >
+                    <input class="form-control" type="text" name="icon" >
                 </div>
 
                 <!-- <div class="form-group">
@@ -36,8 +56,9 @@
                 </div> -->
                 <input type="hidden" value="{{user.user_id}}" name="user_id">
 
-                <input class="form-control btn btn-primary" type="submit">
+                <input class="form-control btn btn-primary my-2" type="submit">
             </form>
+
 
         </div>
     </div>

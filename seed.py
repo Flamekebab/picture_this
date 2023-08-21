@@ -9,7 +9,7 @@ os.system('createdb pt')
 model.connect_to_db(server.app)
 model.db.create_all()
 
-##### * create users * #####
+# * create users * #
 
 
 for i in data:

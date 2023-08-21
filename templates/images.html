@@ -1,15 +1,17 @@
-<div class="row">
+<div class="row justify-content-center">
     {% for image in images %}
-        <div class="col-lg-4 mb-5">
-            <img class="img-fluid mb-2" src="{{ url_for('uploads', filename=image.image_id ~ image.file_extension) }}" alt="">
-            {% if image.board %}
-            <a class="btn btn-secondary d-inline" href="/board/{{image.board.name}}"><i class="{{image.board.icon}} mr-2"></i>{{image.board.name}}</a>
-            {% else %}
-            <p>no board</p>
-            {% endif %}
-            {% if image.notes %}
-            <p class="small d-inline ml-2">{{image.notes}}</p>
-            {% endif %}
-            <p><a class="btn btn-secondary d-inline" href="/delete/{{image.image_id}}"><i class="fas fa-trash mr-2"></i>Delete</a></p>
+        <div class="col px-1 pt-1 h-100 m-1 card col-sm-3">
+            <img class="img-fluid mb-2 card-img-top" src="{{ url_for('uploads', filename=image.image_id ~ image.file_extension) }}" alt="">
+            <div class="card-body">
+                {% if image.notes %}
+                    <p class="card-text">{{image.notes}}</p>
+                {% endif %}
+            <p>
+                <a class="btn btn-secondary d-inline" href="/board/{{image.board.name}}"><i class="{{image.board.icon}} mr-2"></i> {{image.board.name}}</a>
+                <a class="btn btn-danger d-inline" href="/delete/{{image.image_id}}"><i class="fas fa-trash mr-2"></i> Delete</a>
+            </p>
+            </div>
+
+
         </div>
     {% endfor %}

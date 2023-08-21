@@ -114,6 +114,12 @@ def upload_image(input_image, notes, user_id, private=False, board_id=None, uplo
     db.session.add(image)
     db.session.commit()
 
+    # If the board has no images, make this image the thumbnail
+    if len(Image.query.filter(Image.board_id == board_id).all()) == 1:
+        board = Board.query.filter(Board.board_id == board_id).first()
+        board.thumbnail = f"{image_id}{file_extension}"
+        db.session.commit()
+
     return image
 
 
@@ -135,6 +141,19 @@ def uploaded_file_checker(filename):
     if file_extension.lower() not in allowed_extensions:
         valid = False
     return valid
+
+
+def board_thumbnail_set(board_id, image_id):
+    """
+    Update (or set) the thumbnail for a board
+
+    :param board_id: the board to update the thumbnail of
+    :param image_id: the image_id to set as the board thumbnail
+    :return:
+    """
+    board = Board.query.filter(Board.board_id == board_id).first()
+    board.thumbnail_id = image_id
+    db.session.commit()
 
 
 def webp_if_larger(image_path):
