@@ -1,11 +1,10 @@
-# from model import *
 from helpers import *
 
 
 def test_all():
     test_user()
-    test_image()
     test_board()
+    test_image()
 
 
 def test_user():
@@ -20,18 +19,17 @@ def test_image():
         "-question-marks.jpg",
         'this cat is CONFUSE',
         1,
+        1,
         False,
-        None
     )
 
 
 def test_board():
     """Creates test board in test database"""
 
-    tester_board = Board(
+    create_board(
         name='honey badgers',
         icon='fas fa-badger-honey',
         hex_code='#FFC0CB',
         user_id=1)
-    db.session.add(tester_board)
-    db.session.commit()
+

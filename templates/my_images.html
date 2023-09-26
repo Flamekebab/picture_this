@@ -7,8 +7,9 @@
         <div class="mb-4">
             <a class="btn btn-primary" href="/upload">Upload photos</a>
         </div>
+        {% if user.images %}
             {% include 'images.html' %}
-
+        {% endif %}
     {% else %}
         <p>Please <a href="/log_in">log in</a> to access this page.</p>
     {% endif %}

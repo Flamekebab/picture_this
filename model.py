@@ -81,15 +81,19 @@ class Image(db.Model):
 
 
 # Any SQLAlchemy compatible database should work and sqlite is fine as a starter
-def connect_to_db(flask_app, db_uri='sqlite:///pt_database.db', echo=True):
-    flask_app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
+def connect_to_db(flask_app, echo=True):
+    # If we're in testing mode don't use the production DB!
+    if flask_app.config['TESTING']:
+        flask_app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///test_database.db"
+    else:
+        flask_app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///pt_database.db"
     # flask_app.config['SQLALCHEMY_ECHO'] = echo
     flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     db.app = flask_app
     db.init_app(flask_app)
 
-    print('Connected to the db!')
+    print(f"Connected to {flask_app.config['SQLALCHEMY_DATABASE_URI']}")
 
 
 if __name__ == '__main__':
@@ -97,3 +101,4 @@ if __name__ == '__main__':
     connect_to_db(app)
     # This file can be run to debug database queries
     # Y'know... here
+    print(User.query.filter(User.email == "guppy@thecat.com").first())

@@ -9,6 +9,9 @@ import logging
 app = Flask(__name__)
 app.secret_key = os.environ["PT_SECRET_KEY"]  # use key exported from secrets.sh or set an environment variable
 app.jinja_env.undefined = jinja2.StrictUndefined  # throw an error for an undefined Jinja var
+# If we're running tests then set the flag so that a different database is used
+if "PT_TESTING_MODE" in os.environ and os.environ['PT_TESTING_MODE']:
+    app.config['TESTING'] = True
 connect_to_db(app)
 app.config['UPLOAD_FOLDER'] = "uploads"
 # 16 MB limit for images
@@ -49,10 +52,9 @@ def my_images():
     Images are shown in reverse order - i.e. newest first"""
     if 'user_id' in session:
         user = helpers.get_user_by_user_id(session['user_id'])
+        return render_template("my_images.html", user=user, images=list(reversed(user.images)))
     else:
-        user = None
-
-    return render_template("my_images.html", user=user, images=list(reversed(user.images)))
+        return render_template("login.html")
 
 
 @app.route("/delete/<int:image_id>")
@@ -184,12 +186,12 @@ def user_upload_from_form():
 
     if "attached-file" in request.files and request.form['file-or-url'] == "file":
         if helpers.upload_image(
-                request.files['attached-file'], notes, user_id, private, board_id, app.config['UPLOAD_FOLDER'], "file"):
+                request.files['attached-file'], notes, user_id, board_id, private, app.config['UPLOAD_FOLDER'], "file"):
             flash('Image added!')
         else:
             flash('Upload failed')
     else:
-        if helpers.upload_image(url, notes, user_id, private, board_id, app.config['UPLOAD_FOLDER'], "url"):
+        if helpers.upload_image(url, notes, user_id, board_id, private, app.config['UPLOAD_FOLDER'], "url"):
             flash('Image added!')
         else:
             flash('Upload failed')

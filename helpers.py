@@ -2,12 +2,15 @@ import os
 from pathlib import Path
 import urllib.request
 from urllib.parse import urlparse
+
+import sqlalchemy.exc
 from PIL import Image as PillowImage
 from werkzeug.utils import secure_filename
 import logging
 from model import db, User, Image, Board
 
-logging.basicConfig(level=logging.DEBUG)
+
+logging.basicConfig(level=logging.INFO)
 
 
 # * General queries * #
@@ -29,7 +32,12 @@ def check_username(username):
 
 def check_email(email):
     """Check whether given email exists in users table."""
-    return User.query.filter(User.email == email).first()
+    try:
+        user = User.query.filter(User.email == email).first()
+    except sqlalchemy.exc.OperationalError:
+        user = None
+
+    return user
 
 
 def register_user(username, email, password):
@@ -46,7 +54,7 @@ def register_user(username, email, password):
 
 # * Image upload and retrieval * #
 
-def upload_image(input_image, notes, user_id, private=False, board_id=None, upload_dir="uploads", file_or_url="url"):
+def upload_image(input_image, notes, user_id, board_id, private=False, upload_dir="uploads", file_or_url="url"):
     # We want to know what the last image_id was so that we can use it for the image's filename
     last_image_id = db.session.query(Image.image_id).order_by(Image.image_id.desc()).limit(1).scalar()
     if not last_image_id:
