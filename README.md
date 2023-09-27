@@ -90,7 +90,7 @@ $ python3 initialise_db.py
 $ python3 demo_data.py
 ```
 
-10Launch the server:
+10. Launch the server:
 
 ```
 $ python3 server.py
