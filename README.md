@@ -110,8 +110,7 @@ Rewritten by Flamekebab (as I'm not Cori!):
 
 1. Shared boards
 2. Tagging
-3. Better security
-4. Private images?
+3. Private images?
 
 ## About the developers :woman_technologist:
 
