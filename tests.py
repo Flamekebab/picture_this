@@ -1,6 +1,7 @@
-import os
+from werkzeug.datastructures import FileStorage
 import shutil
 import unittest
+import os
 os.environ['PT_TESTING_MODE'] = 'True'
 os.system('export PT_TESTING_MODE')
 from server import app
@@ -88,6 +89,7 @@ class ServerTests(unittest.TestCase):
 
         form_data = {
             "board_id": 1,
+            "file-or-url": "url",
             "url": "https://upload.wikimedia.org/wikipedia/commons/9/92/Manul1a.jpg",
             "notes": "Testing uploads through the medium of pallas cats",
             "private": False
@@ -105,7 +107,29 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(result.status_code, 200)
         self.assertIn(b"pallas cats", result.data)
 
-    def test_6_delete_image(self):
+    def test_6_upload_from_file(self):
+        """Can we upload from a file?"""
+        with self.client.session_transaction() as session:
+            session['user_id'] = 1
+            session['username'] = 'Guppy'
+
+        # We have a file to hand (the first image we uploaded) - we can upload it as a file!
+        file_path = "./test_uploads/1.webp"
+        with open(file_path, "rb") as file:
+            # Create a Werkzeug FileStorage object from the file
+            file_storage = FileStorage(file)
+            form_data = {
+                "board_id": 1,
+                "file-or-url": "file",
+                "url": "",
+                "notes": "How about the same picture again?",
+                "private": False,
+                "attached-file": file_storage
+            }
+            result = self.client.post("/api/upload", data=form_data)
+        self.assertIn(b'You should be redirected automatically to target URL: <a href="/my_images">', result.data)
+
+    def test_7_delete_image(self):
         """Can we delete images with the appropriate credentials?"""
         # First without being logged in:
         self.client.get("/delete/1")
@@ -125,8 +149,6 @@ class ServerTests(unittest.TestCase):
 
         self.assertEqual(flash_messages[0][1], "Login to delete images")
         self.assertEqual(flash_messages[1][1], "Image deleted successfully")
-
-    # TODO: Add a unit test for uploading a file
 
     def tearDown(self):
         """Code to run after every test"""
