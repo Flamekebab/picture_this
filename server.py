@@ -12,8 +12,10 @@ app.jinja_env.undefined = jinja2.StrictUndefined  # throw an error for an undefi
 # If we're running tests then set the flag so that a different database is used
 if "PT_TESTING_MODE" in os.environ and os.environ['PT_TESTING_MODE']:
     app.config['TESTING'] = True
-connect_to_db(app)
+
 app.config['UPLOAD_FOLDER'] = "uploads"
+connect_to_db(app)
+
 # 16 MB limit for images
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1000 * 1000
 
@@ -73,7 +75,7 @@ def delete_image(image_id):
     else:
         message = "Login to delete images"
 
-    flash(message, "message")
+    flash(message)
     return redirect(request.referrer)
 
 
@@ -129,7 +131,7 @@ def register_new_user():
     if helpers.check_username(username) is None and helpers.check_email(email) is None:
         # user = helpers.register_user(username, email, password)
         helpers.register_user(username, email, password)
-        flash(f'Account created!')
+        flash("Account created!")
         return redirect('/log_in')
     else:
         flash('Try again with a different username and email!')
@@ -144,7 +146,7 @@ def log_in_user():
     password = request.form['password']
 
     if helpers.check_email(email) is None:
-        flash(f"Email doesn't exist in database!")
+        flash("Email doesn't exist in database!")
         return redirect('/log_in')
     else:
         user = helpers.check_email(email)
@@ -203,13 +205,16 @@ def user_upload_from_form():
 def add_board_from_form():
     name = request.form['name']
     icon = request.form['icon']
-    color = '#e0a356'  # TODO: make this dynamic
+    color = '#e0a356'  # Not sure if this is relevant anymore - it was when boards were tags
+    # TODO: Why is this not pulling from session? Couldn't someone modify the HTML and send a different user_id?
     user_id = request.form['user_id']
 
     helpers.create_board(name, icon, color, user_id)
 
-    flash('Board created successfully')
+    flash("Board created successfully")
 
+    # This seems needless..? If there's no user this whole function should fail out
+    # TODO: FIX THIS
     if 'user_id' in session:
         user = helpers.get_user_by_user_id(session['user_id'])
     else:

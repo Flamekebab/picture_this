@@ -18,9 +18,9 @@ Picture This is a photo repository to store and categorize your favorite pics.
 
 ## How it works :desktop_computer:
 
-Users can create an account with a username, email, and password - passwords are hashed and salted using Python's **bcrypt** module and added to the **PostgreSQL** database using **SQLAlchemy**. 
+Users can create an account with a username, email, and password - passwords are hashed and salted using Python's **bcrypt** module and added to the **SQLite** database using **SQLAlchemy**. 
 
-We are confident the database is set up proprerly because we ran our **Unittest** test suite before starting the server!
+We are confident the database is set up properly because we ran our **Unittest** test suite before starting the server!
 
 ![app screenshot](/static/img/pt_img_register.png)
 
@@ -110,6 +110,7 @@ $ python3 server.py
 ## About the developer :woman_technologist:
 
 Built by [Cori Lint](https://github.com/coriography), with the help of Guppy the cat. :cat:
+
 Fiddled with by Morgan Fox.
 
 *Cori is cellist-turned-software engineer with a knack for motivating and inspiring others. As her career has evolved from performance, to production, to web design, to software engineering, she has continued to seek growth and creative solutions. Cori brings to the tech industry leadership abilities, persistence, focus, empathy, and good judgment, along with a strong set of technical skills and prior experience in web development. She is a Summa Cum Laude graduate of the University of Michigan, and an active member of Artists Who Code, an online community that advocates for creative professionals in the tech industry.*
