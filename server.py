@@ -5,15 +5,17 @@ from model import connect_to_db
 import helpers
 import logging
 
-
 app = Flask(__name__)
 app.secret_key = os.environ["PT_SECRET_KEY"]  # use key exported from secrets.sh or set an environment variable
 app.jinja_env.undefined = jinja2.StrictUndefined  # throw an error for an undefined Jinja var
 # If we're running tests then set the flag so that a different database is used
 if "PT_TESTING_MODE" in os.environ and os.environ['PT_TESTING_MODE']:
     app.config['TESTING'] = True
+    app.config['UPLOAD_FOLDER'] = "test_uploads"
+else:
+    app.config['UPLOAD_FOLDER'] = "uploads"
 
-app.config['UPLOAD_FOLDER'] = "uploads"
+
 connect_to_db(app)
 
 # 16 MB limit for images
@@ -26,6 +28,7 @@ logging.basicConfig(level=logging.DEBUG)
 @app.route('/uploads/<path:filename>')
 def uploads(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 
 # * RENDER PAGES * #
 
@@ -86,11 +89,9 @@ def show_single_board(selected_board):
     if 'user_id' in session:
         user = helpers.get_user_by_user_id(session['user_id'])
         board_images = helpers.board_images_for_user(session['user_id'], selected_board)
+        return render_template("single_board.html", user=user, selected_board=selected_board, images=board_images)
     else:
-        user = None
-        board_images = None
-
-    return render_template("single_board.html", user=user, selected_board=selected_board, images=board_images)
+        return render_template("login.html")
 
 
 @app.route("/upload")
@@ -99,10 +100,9 @@ def show_upload_page():
 
     if 'user_id' in session:
         user = helpers.get_user_by_user_id(session['user_id'])
+        return render_template("upload.html", user=user)
     else:
-        user = None
-
-    return render_template("upload.html", user=user)
+        return render_template("login.html")
 
 
 @app.route("/boards")
@@ -111,14 +111,12 @@ def show_boards_page():
 
     if 'user_id' in session:
         user = helpers.get_user_by_user_id(session['user_id'])
+        return render_template("boards.html", user=user)
     else:
-        user = None
-
-    return render_template("boards.html", user=user)
+        return render_template("login.html")
 
 
 # * API * #
-# TODO: secure the API
 
 @app.route('/api/register_user', methods=['POST'])
 def register_new_user():
@@ -129,10 +127,9 @@ def register_new_user():
     password = request.form['password']
 
     if helpers.check_username(username) is None and helpers.check_email(email) is None:
-        # user = helpers.register_user(username, email, password)
         helpers.register_user(username, email, password)
         flash("Account created!")
-        return redirect('/log_in')
+        return render_template("login.html")
     else:
         flash('Try again with a different username and email!')
         return redirect('/')
@@ -147,19 +144,18 @@ def log_in_user():
 
     if helpers.check_email(email) is None:
         flash("Email doesn't exist in database!")
-        return redirect('/log_in')
+        return render_template("login.html")
     else:
         user = helpers.check_email(email)
 
     if user.check_password(password):
-        # session['user'] = user
         session['user_id'] = user.user_id
         session['username'] = user.username
         flash('Successfully logged in!')
         return redirect(url_for("my_images"))
     else:
         flash('Incorrect password!')
-        return redirect('/log_in')
+        return render_template("login.html")
 
 
 @app.route('/api/log_out')
@@ -171,12 +167,16 @@ def log_out():
 
 @app.route('/api/upload', methods=['POST'])
 def user_upload_from_form():
-    # We should probably require some login credentials here..
-    app.logger.debug(f"{request.form}")
+    # Debug the form output
+    # app.logger.debug(f"{request.form}")
+    if 'user_id' in session:
+        user_id = session['user_id']
+    else:
+        return render_template("login.html")
 
     notes = request.form['notes']
-    user_id = session['user_id']
     board_id = request.form['board_id']
+
     # This may or may not be used but is always present
     url = request.form['url']
 
@@ -203,22 +203,18 @@ def user_upload_from_form():
 
 @app.route('/api/add_board', methods=['POST'])
 def add_board_from_form():
+    if 'user_id' in session:
+        user = helpers.get_user_by_user_id(session['user_id'])
+        user_id = session['user_id']
+    else:
+        return render_template("login.html")
+
     name = request.form['name']
     icon = request.form['icon']
     color = '#e0a356'  # Not sure if this is relevant anymore - it was when boards were tags
-    # TODO: Why is this not pulling from session? Couldn't someone modify the HTML and send a different user_id?
-    user_id = request.form['user_id']
 
     helpers.create_board(name, icon, color, user_id)
-
     flash("Board created successfully")
-
-    # This seems needless..? If there's no user this whole function should fail out
-    # TODO: FIX THIS
-    if 'user_id' in session:
-        user = helpers.get_user_by_user_id(session['user_id'])
-    else:
-        user = None
 
     return render_template("upload.html", user=user)
 

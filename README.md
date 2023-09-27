@@ -100,6 +100,9 @@ $ python3 server.py
 
 12. Create an account, or log in with existing account *guppy@thecat.com, badpw* if you added the demo data.
 
+If you've logged in as the demo account and not logged out then the server will throw an error if you attempt to
+access the site with an invalid session (e.g. if you've wiped the database without logging out).
+You can use your browser's dev tools to manually clear the session.
 
 ## What's next? :thinking:
 

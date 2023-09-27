@@ -23,7 +23,6 @@ class ServerTests(unittest.TestCase):
 
     def test_1_homepage(self):
         """Does homepage load at all?"""
-
         result = self.client.get("/")
         self.assertEqual(result.status_code, 200)
         self.assertIn(b"Log Your Bad Self In", result.data)
@@ -38,9 +37,10 @@ class ServerTests(unittest.TestCase):
         """Does Upload page load but actually redirect?"""
         result = self.client.get("/upload")
         self.assertEqual(result.status_code, 200)
-        self.assertIn(b"to access this page", result.data)
+        self.assertIn(b"Log Your Bad Self In", result.data)
 
     def test_1_upload_api_logged_out(self):
+        """Does uploading without being logged in fail as it should?"""
         # (I've swapped the URL for one I expect to be reliable for years to come)
         form_data = {
             "board_id": 1,
@@ -48,8 +48,9 @@ class ServerTests(unittest.TestCase):
             "notes": "Testing uploads through the medium of pallas cats",
             "private": False
         }
-        with self.assertRaises(KeyError):
-            self.client.post("/api/upload", data=form_data)
+        result = self.client.post("/api/upload", data=form_data)
+        self.assertEqual(result.status_code, 200)
+        self.assertIn(b"Log Your Bad Self In", result.data)
 
     def test_2_register(self):
         """Can we register a user?"""
@@ -59,10 +60,12 @@ class ServerTests(unittest.TestCase):
             "password": "badpw",
         }
         result = self.client.post("/api/register_user", data=form_data)
-        # Success redirects to the login page, failure redirects to root
-        self.assertIn(b'You should be redirected automatically to target URL: <a href="/log_in">', result.data)
+        # Success renders the login page, failure redirects to root
+        self.assertEqual(result.status_code, 200)
+        self.assertIn(b"Log Your Bad Self In", result.data)
 
     def test_3_create_board(self):
+        """Can a registered user create a board?"""
         with self.client.session_transaction() as session:
             session['user_id'] = 1
             session['username'] = 'Guppy'
@@ -106,7 +109,7 @@ class ServerTests(unittest.TestCase):
         """Can we delete images with the appropriate credentials?"""
         # First without being logged in:
         self.client.get("/delete/1")
-        # This will generate a flash message ("Login to delete images")
+        # This will generate the first flash message ("Login to delete images")
 
         # Log in and test:
         with self.client.session_transaction() as session:
@@ -114,6 +117,7 @@ class ServerTests(unittest.TestCase):
             session['username'] = 'Guppy'
 
         result = self.client.get("/delete/1")
+        # This will generate the second flash message ("Image deleted successfully")
         self.assertEqual(result.status_code, 302)
         with self.client.session_transaction() as session:
             # A list of tuples - e.g. [('message', 'Image deleted successfully')]
