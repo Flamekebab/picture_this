@@ -82,9 +82,11 @@ def delete_image(image_id):
     return redirect(request.referrer)
 
 
-@app.route("/board/<string:selected_board>")
-def show_single_board(selected_board):
-    """Return a board - restricted to boards the user has access to."""
+@app.route("/board/<string:username>/<string:selected_board>")
+def show_single_board(selected_board, username):
+    """Return a board - restricted to boards the user has access to.
+    The username does nothing - I just can't currently find anything on wildcards.
+    We don't trust the URL to contain the correct username (don't trust users) so it's irrelevant"""
 
     if 'user_id' in session:
         user = helpers.get_user_by_user_id(session['user_id'])
@@ -94,13 +96,29 @@ def show_single_board(selected_board):
         return render_template("login.html")
 
 
+@app.route("/delete_board/<string:username>/<string:selected_board>")
+def delete_board(selected_board, username):
+    """Delete a board"""
+
+    if 'user_id' in session:
+        if helpers.delete_board(session['user_id'], selected_board, upload_dir=app.config['UPLOAD_FOLDER']):
+            flash(f"{selected_board} deleted!")
+        else:
+            flash(f"Problem encountered deleting {selected_board}!")
+        return redirect(url_for("show_boards_page"))
+    else:
+        flash("Login to delete a board")
+        return render_template("login.html")
+
+
 @app.route("/upload")
-def show_upload_page():
+@app.route("/upload/<string:username>/<string:selected_board>")
+def show_upload_page(username="", selected_board=""):
     """Return Upload page."""
 
     if 'user_id' in session:
         user = helpers.get_user_by_user_id(session['user_id'])
-        return render_template("upload.html", user=user)
+        return render_template("upload.html", user=user, upload_to=selected_board)
     else:
         return render_template("login.html")
 
@@ -197,10 +215,13 @@ def user_upload_from_form():
             flash('Image added!')
         else:
             flash('Upload failed')
+    # Redirect the user back to the board they uploaded from
+    username = helpers.get_user_by_user_id(user_id).username
+    board_name = helpers.get_board_name_by_board_id(board_id)
+    return redirect(f"/board/{username}/{board_name}")
 
-    return redirect('/my_images')
 
-
+# TODO - prevent duplicate boards from being created
 @app.route('/api/add_board', methods=['POST'])
 def add_board_from_form():
     if 'user_id' in session:
@@ -216,7 +237,7 @@ def add_board_from_form():
     helpers.create_board(name, icon, color, user_id)
     flash("Board created successfully")
 
-    return render_template("upload.html", user=user)
+    return render_template("upload.html", user=user, upload_to=name)
 
 
 if __name__ == "__main__":

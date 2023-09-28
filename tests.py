@@ -95,7 +95,7 @@ class ServerTests(unittest.TestCase):
             "private": False
         }
         result = self.client.post("/api/upload", data=form_data)
-        self.assertIn(b'You should be redirected automatically to target URL: <a href="/my_images">', result.data)
+        self.assertIn(b"/board/Guppy/honey badgers", result.data)
 
     def test_5_my_images_logged_in(self):
         """Does the My Images page load when logged in?"""
@@ -127,7 +127,7 @@ class ServerTests(unittest.TestCase):
                 "attached-file": file_storage
             }
             result = self.client.post("/api/upload", data=form_data)
-        self.assertIn(b'You should be redirected automatically to target URL: <a href="/my_images">', result.data)
+        self.assertIn(b"/board/Guppy/honey badgers", result.data)
 
     def test_7_delete_image(self):
         """Can we delete images with the appropriate credentials?"""
@@ -149,6 +149,19 @@ class ServerTests(unittest.TestCase):
 
         self.assertEqual(flash_messages[0][1], "Login to delete images")
         self.assertEqual(flash_messages[1][1], "Image deleted successfully")
+
+    def test_8_delete_board(self):
+        """Can we delete a board?"""
+        with self.client.session_transaction() as session:
+            session['user_id'] = 1
+            session['username'] = 'Guppy'
+
+        result = self.client.get("/delete_board/Guppy/honey badgers")
+        self.assertEqual(result.status_code, 302)
+        with self.client.session_transaction() as session:
+            # A list of tuples - e.g. [('message', 'honey badgers deleted!')]
+            flash_messages = session['_flashes']
+        self.assertEqual(flash_messages[0][1], "honey badgers deleted!")
 
     def tearDown(self):
         """Code to run after every test"""

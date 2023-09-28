@@ -44,7 +44,11 @@
                     <select class="custom-select" name="board_id" required>
                         <option value="" selected disabled>Select a board</option>
                         {% for board in user['boards'] %}
-                            <option value="{{board.board_id}}">{{board.name}}</option>
+                            {% if board.name == upload_to %}
+                                <option value="{{board.board_id}}" selected="selected">{{board.name}}</option>
+                            {% else %}
+                                <option value="{{board.board_id}}">{{board.name}}</option>
+                            {% endif %}
                         {% endfor %}
                     </select>
                 </div>

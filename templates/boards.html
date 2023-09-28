@@ -15,7 +15,7 @@
                 <div class="row">
                 {% for board in user['boards'] %}
                     <div class="card col px-1 pt-1 h-100 m-1">
-                        <a href="/board/{{board.name}}" style="text-decoration:none">
+                        <a href="/board/{{user.username}}/{{board.name}}" style="text-decoration:none">
                             <div class="board-thumb-container position-relative">
                                 {% if board.thumbnail %}
                                 <img src="{{ url_for('uploads', filename=board.thumbnail) }}" class="card-img-top">
@@ -28,6 +28,7 @@
                                 <h6 class="card-title">
                                     {{board.name}}
                                 </h6>
+                                <a class="btn btn-danger d-inline" href="/delete_board/{{user.username}}/{{board.name}}"><i class="fas fa-trash mr-2"></i> Delete</a>
                             </div>
                         </a>
                     </div>

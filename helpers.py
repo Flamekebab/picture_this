@@ -9,7 +9,6 @@ from werkzeug.utils import secure_filename
 import logging
 from model import db, User, Image, Board
 
-
 logging.basicConfig(level=logging.INFO)
 
 
@@ -21,6 +20,10 @@ def get_all_users():
 
 def get_user_by_user_id(user_id):
     return User.query.filter(User.user_id == user_id).first()
+
+
+def get_board_name_by_board_id(board_id):
+    return Board.query.filter(Board.board_id == board_id).first().name
 
 
 # * User registration & login * #
@@ -248,3 +251,15 @@ def delete_image(user_id, image_id, upload_dir="uploads"):
         return True
     else:
         return False
+
+
+def delete_board(user_id, board_string, upload_dir="uploads"):
+    selected_board = Board.query.filter(Board.name == board_string, Board.user_id == user_id).first()
+    if not selected_board:
+        return False
+    board_images = Image.query.filter(Image.board_id == selected_board.board_id).all()
+    for image in board_images:
+        delete_image(user_id, image.image_id, upload_dir=upload_dir)
+    db.session.delete(selected_board)
+    db.session.commit()
+    return True
