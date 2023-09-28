@@ -216,16 +216,19 @@ def get_images_by_user(user_id):
 # * Boards * #
 
 def create_board(name, icon, hex_code, user_id):
-    board = Board(
-        name=name,
-        icon=icon,
-        hex_code=hex_code,
-        user_id=user_id
-    )
-    db.session.add(board)
-    db.session.commit()
+    if Board.query.filter(Board.name == name).all():
+        return False
+    else:
+        board = Board(
+            name=name,
+            icon=icon,
+            hex_code=hex_code,
+            user_id=user_id
+        )
+        db.session.add(board)
+        db.session.commit()
 
-    return board
+        return board
 
 
 def board_images_for_user(user_id, board_string):

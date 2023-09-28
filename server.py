@@ -15,7 +15,6 @@ if "PT_TESTING_MODE" in os.environ and os.environ['PT_TESTING_MODE']:
 else:
     app.config['UPLOAD_FOLDER'] = "uploads"
 
-
 connect_to_db(app)
 
 # 16 MB limit for images
@@ -221,7 +220,6 @@ def user_upload_from_form():
     return redirect(f"/board/{username}/{board_name}")
 
 
-# TODO - prevent duplicate boards from being created
 @app.route('/api/add_board', methods=['POST'])
 def add_board_from_form():
     if 'user_id' in session:
@@ -234,10 +232,12 @@ def add_board_from_form():
     icon = request.form['icon']
     color = '#e0a356'  # Not sure if this is relevant anymore - it was when boards were tags
 
-    helpers.create_board(name, icon, color, user_id)
-    flash("Board created successfully")
-
-    return render_template("upload.html", user=user, upload_to=name)
+    if helpers.create_board(name, icon, color, user_id):
+        flash("Board created successfully")
+        return render_template("upload.html", user=user, upload_to=name)
+    else:
+        flash(f"A board called {name} already exists")
+        return redirect(url_for("show_boards_page"))
 
 
 if __name__ == "__main__":

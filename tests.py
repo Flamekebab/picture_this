@@ -81,6 +81,26 @@ class ServerTests(unittest.TestCase):
         self.assertIn(b"Add a photo", result.data)
         self.assertNotIn(b"log in</a> to access this page", result.data)
 
+    def test_3_create_duplicate_board(self):
+        """Does the app refuse to create a duplicate board?"""
+        with self.client.session_transaction() as session:
+            session['user_id'] = 1
+            session['username'] = 'Guppy'
+
+        form_data = {
+            "name": "honey badgers",
+            "icon": 'fas fa-badger-honey',
+            "hex_code": '#FFC0CB',
+            "user_id": 1
+        }
+        result = self.client.post("/api/add_board", data=form_data)
+        self.assertNotIn(b"log in</a> to access this page", result.data)
+        self.assertEqual(result.status_code, 302)
+        with self.client.session_transaction() as session:
+            # A list of tuples - e.g. [('message', 'A board called honey badgers already exists')]
+            flash_messages = session['_flashes']
+        self.assertEqual(flash_messages[0][1], "A board called honey badgers already exists")
+
     def test_4_upload_from_url(self):
         """Can we upload an image from a URL?"""
         with self.client.session_transaction() as session:
