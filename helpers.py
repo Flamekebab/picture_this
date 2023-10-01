@@ -33,7 +33,7 @@ def get_board_id_by_board_name(board_name, user_id):
     :param user_id: int
     :return: (int) the id of the board requested
     """
-    return Board.query.filter(Board.name == board_name, Board.user_id == user_id).first().user_id
+    return Board.query.filter(Board.name == board_name, Board.user_id == user_id).first().board_id
 
 
 def get_shared_with(board_id, user_id):

@@ -113,6 +113,9 @@ if __name__ == '__main__':
     connect_to_db(app)
     # This file can be run to debug database queries
     # Y'know... here
+    # user = User.query.get(2)
+    # db.session.delete(user)
+    # db.session.commit()
     # print(User.query.filter(User.email == "guppy@thecat.com").first())
     # test_board = Board.query.filter().first()
     # test_users = User.query.filter(User.user_id != 1)
