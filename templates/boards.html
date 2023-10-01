@@ -36,6 +36,35 @@
                 </div>
             </div>
             {% endif %}
+
+
+            {% if shared_boards %}
+            Shared boards:<br>
+            <div class="container pb-4">
+                <div class="row">
+                {% for board in shared_boards %}
+                    <div class="card col px-1 pt-1 h-100 m-1">
+                        <a href="/board/{{board.username}}/{{board.name}}" style="text-decoration:none">
+                            <div class="board-thumb-container position-relative">
+                                {% if board.thumbnail %}
+                                <img src="{{ url_for('uploads', filename=board.thumbnail) }}" class="card-img-top">
+                                {% else %}
+                                <img class="card-img-top" style="width: 500px; height: 500px;">
+                                {% endif %}
+                                <i class="{{board.icon}} position-absolute top-50 start-50 translate-middle mr-2 fs-1 board-icon-large"></i>
+                            </div>
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    {{board.name}}
+                                </h6>
+                                <a class="btn btn-danger d-inline" href="/unshare_guest/{{board.username}}/{{board.name}}"><i class="fas fa-trash mr-2"></i> Unshare</a>
+                            </div>
+                        </a>
+                    </div>
+                {% endfor %}
+                </div>
+            </div>
+            {% endif %}
             
 
             <form action="/api/add_board" method="POST">

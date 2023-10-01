@@ -87,6 +87,7 @@ def show_single_board(selected_board, username):
     The username does nothing - I just can't currently find anything on wildcards.
     We don't trust the URL to contain the correct username (don't trust users) so it's irrelevant"""
 
+    # TODO: Write the logic for shared boards vs. owned boards
     if 'user_id' in session:
         user = helpers.get_user_by_user_id(session['user_id'])
         board_images = helpers.board_images_for_user(session['user_id'], selected_board)
@@ -138,7 +139,14 @@ def show_boards_page():
 
     if 'user_id' in session:
         user = helpers.get_user_by_user_id(session['user_id'])
-        return render_template("boards.html", user=user)
+        # Get a list of board_ids that are shared with the user
+        board_ids = helpers.get_board_ids_shared_with_user(session['user_id'])
+        shared_boards = []
+        for board_id in board_ids:
+            board = helpers.get_shared_boards_from_id(board_id)
+            board.username = helpers.get_user_by_user_id(board.user_id).username
+            shared_boards.append(board)
+        return render_template("boards.html", user=user, shared_boards=shared_boards)
     else:
         return render_template("login.html")
 

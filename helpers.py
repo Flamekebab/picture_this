@@ -53,6 +53,20 @@ def get_shared_with(board_id, user_id):
     return shared_with
 
 
+def get_board_ids_shared_with_user(user_id):
+    all_shared_boards = []
+    # We can ignore boards that the user already owns
+    for board in Board.query.filter(Board.user_id != user_id).all():
+        for user in board.shared_with:
+            if user.user_id == user_id:
+                all_shared_boards.append(board.board_id)
+    return all_shared_boards
+
+
+def get_shared_boards_from_id(board_id):
+    return Board.query.get(board_id)
+
+
 # * User registration & login * #
 
 def check_username(username):

@@ -3,6 +3,14 @@ import bcrypt
 
 db = SQLAlchemy()
 
+# By doing things this way we prevent invalid user_id values in the shared boards table
+# We can also easily show which boards are shared with a user
+shared_boards = db.Table(
+    'shared_boards',
+    db.Column('board_id', db.Integer, db.ForeignKey('boards.board_id'), primary_key=True),
+    db.Column('user_id', db.Integer, db.ForeignKey('users.user_id'), primary_key=True)
+)
+
 
 class User(db.Model):
     """Data model for a user."""
@@ -13,6 +21,9 @@ class User(db.Model):
     username = db.Column(db.String(15), nullable=False)
     email = db.Column(db.String(50), nullable=False)
     password_hashed = db.Column(db.LargeBinary(128), nullable=False)
+
+    # shared_with = db.relationship('Board', secondary=shared_boards,
+    #                               backref=db.backref('shared_boards', lazy='dynamic'))
 
     # images: a list of Image objects associated with User.
     # relationship is established in Image model.
@@ -30,15 +41,6 @@ class User(db.Model):
         """Display info about User."""
 
         return f'<User user_id={self.user_id}, username={self.username}, email={self.email}>'
-
-
-# By doing things this way we prevent invalid user_id values in the shared boards table
-# We can also easily show which boards are shared with a user
-shared_boards = db.Table(
-    'shared_boards',
-    db.Column('board_id', db.Integer, db.ForeignKey('boards.board_id'), primary_key=True),
-    db.Column('user_id', db.Integer, db.ForeignKey('users.user_id'), primary_key=True)
-)
 
 
 class Board(db.Model):
@@ -113,16 +115,13 @@ if __name__ == '__main__':
     connect_to_db(app)
     # This file can be run to debug database queries
     # Y'know... here
-    # user = User.query.get(2)
-    # db.session.delete(user)
-    # db.session.commit()
-    # print(User.query.filter(User.email == "guppy@thecat.com").first())
-    # test_board = Board.query.filter().first()
+    print(User.query.filter(User.email == "guppy@thecat.com").first())
+    test_board = Board.query.filter().first()
     # test_users = User.query.filter(User.user_id != 1)
     # for test_user in test_users:
     #     test_board.shared_with.append(test_user)
-    # print(test_board.shared_with)
-    # boards = User.query.get(3).shared_boards
-    # for board in boards:
-    #     print(board)
+    print(test_board.shared_with)
+    boards = User.query.get(3).shared_boards
+    for board in boards:
+        print(board)
     # db.session.commit()
