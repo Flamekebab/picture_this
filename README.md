@@ -111,6 +111,7 @@ Rewritten by Flamekebab (as I'm not Cori!):
 1. Shared boards
 2. Tagging
 3. Private images?
+4. Pagination and lazy loading?
 
 ## About the developers :woman_technologist:
 

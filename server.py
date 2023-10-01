@@ -90,7 +90,17 @@ def show_single_board(selected_board, username):
     if 'user_id' in session:
         user = helpers.get_user_by_user_id(session['user_id'])
         board_images = helpers.board_images_for_user(session['user_id'], selected_board)
-        return render_template("single_board.html", user=user, selected_board=selected_board, images=board_images)
+
+        # Use the helper function to convert the board name into a board ID, nothing fancy, just a bit awkward to read
+        shared_with = helpers.get_shared_with(
+            helpers.get_board_id_by_board_name(selected_board, session['user_id']),
+            session['user_id']
+        )
+        return render_template("single_board.html",
+                               user=user,
+                               selected_board=selected_board,
+                               images=board_images,
+                               shared_with=shared_with)
     else:
         return render_template("login.html")
 

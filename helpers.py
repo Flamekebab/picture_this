@@ -26,6 +26,33 @@ def get_board_name_by_board_id(board_id):
     return Board.query.filter(Board.board_id == board_id).first().name
 
 
+def get_board_id_by_board_name(board_name, user_id):
+    """
+    Board names aren't unique but they are per-user.
+    :param board_name: str
+    :param user_id: int
+    :return: (int) the id of the board requested
+    """
+    return Board.query.filter(Board.name == board_name, Board.user_id == user_id).first().user_id
+
+
+def get_shared_with(board_id, user_id):
+    """
+    Get the usernames this board is shared with, excluding the owner of the board
+    :param board_id: (int) requested board
+    :param user_id: (int) owner of the board
+    :return: (list) a list of usernames
+    """
+    # Get queries based on the primary key, unlike a filter
+    board = Board.query.get(board_id)
+    owner = User.query.get(user_id)
+    shared_with = []
+    for user in board.shared_with:
+        if user.user_id != owner.user_id:
+            shared_with.append(user.username)
+    return shared_with
+
+
 # * User registration & login * #
 
 def check_username(username):

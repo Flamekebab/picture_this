@@ -118,7 +118,8 @@ if __name__ == '__main__':
     # test_users = User.query.filter(User.user_id != 1)
     # for test_user in test_users:
     #     test_board.shared_with.append(test_user)
-    # # print(test_board.shared_with)
+    # print(test_board.shared_with)
     # boards = User.query.get(3).shared_boards
     # for board in boards:
     #     print(board)
+    # db.session.commit()

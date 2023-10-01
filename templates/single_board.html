@@ -9,6 +9,14 @@
             <a class="btn btn-primary" href="/upload/{{user.username}}/{{selected_board}}">Upload photos</a>
             <a class="btn btn-danger d-inline" href="/delete_board/{{user.username}}/{{selected_board}}"><i class="fas fa-trash mr-2"></i> Delete board</a>
         </div>
+        {% if shared_with %}
+            <div class="mb-4">
+                Shared with:
+                {% for sharer in shared_with %}
+                    <span class="badge rounded-pill bg-success">{{ sharer }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
         {% include 'images.html' %}
     {% else %}
         <p>Please <a href="/log_in">log in</a> to access this page.</p>
