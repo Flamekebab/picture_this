@@ -43,7 +43,7 @@
                 <div class="form-group">
                     <select class="custom-select" name="board_id" required>
                         <option value="" selected disabled>Select a board</option>
-                        {% for board in user['boards'] %}
+                        {% for board in available_boards %}
                             {% if board.name == upload_to %}
                                 <option value="{{board.board_id}}" selected="selected">{{board.name}}</option>
                             {% else %}

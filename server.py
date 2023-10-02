@@ -84,24 +84,38 @@ def delete_image(image_id):
 @app.route("/board/<string:username>/<string:selected_board>")
 def show_single_board(selected_board, username):
     """Return a board - restricted to boards the user has access to.
-    The username does nothing - I just can't currently find anything on wildcards.
-    We don't trust the URL to contain the correct username (don't trust users) so it's irrelevant"""
 
-    # TODO: Write the logic for shared boards vs. owned boards
+    :param selected_board: (str) name of the board (Board.name)
+    :param username: (str) name of the board's owner (User.username)
+    """
+
     if 'user_id' in session:
-        user = helpers.get_user_by_user_id(session['user_id'])
-        board_images = helpers.board_images_for_user(session['user_id'], selected_board)
+        # Access to the board is allowed if the user owns the board or is in the shared list
+        # First let's get the relevant ids
+        owner_id = helpers.get_user_id_by_username(username)
+        board_id = helpers.get_board_id_by_board_name(selected_board, owner_id)
 
-        # Use the helper function to convert the board name into a board ID, nothing fancy, just a bit awkward to read
-        shared_with = helpers.get_shared_with(
-            helpers.get_board_id_by_board_name(selected_board, session['user_id']),
-            session['user_id']
-        )
+        accessing_user = helpers.get_user_by_user_id(session['user_id'])
+
+        if session['user_id'] == owner_id:
+            # If it's the owner accessing it, show who it's shared with
+            shared_with = helpers.get_shared_with(
+                helpers.get_board_id_by_board_name(selected_board, session['user_id']),
+                session['user_id']
+            )
+            # Collect the images from the user directly
+            board_images = helpers.board_images_for_user(session['user_id'], selected_board)
+        else:
+            # This isn't their board - we won't show who it's shared with
+            shared_with = []
+            # If they don't have permission this will simply return False
+            board_images = helpers.board_images_for_shared_user(session['user_id'], board_id)
         return render_template("single_board.html",
-                               user=user,
+                               user=accessing_user,
                                selected_board=selected_board,
                                images=board_images,
-                               shared_with=shared_with)
+                               shared_with=shared_with,
+                               owner_username=username)
     else:
         return render_template("login.html")
 
@@ -126,9 +140,24 @@ def delete_board(selected_board, username):
 def show_upload_page(username="", selected_board=""):
     """Return Upload page."""
 
+    # To handle uploading to shared boards we need to get a bit complicated
+    # owner_id = helpers.get_user_id_by_username(username)
     if 'user_id' in session:
         user = helpers.get_user_by_user_id(session['user_id'])
-        return render_template("upload.html", user=user, upload_to=selected_board)
+        available_boards = []
+        for board in user.boards:
+            board_object = {"name": board.name,
+                            "board_id": board.board_id}
+            available_boards.append(board_object)
+
+        # They also might have some boards shared with them
+        shared_board_ids = helpers.get_board_ids_shared_with_user(session['user_id'])
+        for board_id in shared_board_ids:
+            board_object = {"name": helpers.get_board_name_by_board_id(board_id),
+                            "board_id": board_id}
+            available_boards.append(board_object)
+
+        return render_template("upload.html", user=user, available_boards=available_boards, upload_to=selected_board)
     else:
         return render_template("login.html")
 
@@ -143,7 +172,7 @@ def show_boards_page():
         board_ids = helpers.get_board_ids_shared_with_user(session['user_id'])
         shared_boards = []
         for board_id in board_ids:
-            board = helpers.get_shared_boards_from_id(board_id)
+            board = helpers.get_board_from_id(board_id)
             board.username = helpers.get_user_by_user_id(board.user_id).username
             shared_boards.append(board)
         return render_template("boards.html", user=user, shared_boards=shared_boards)
@@ -200,6 +229,7 @@ def log_out():
     return redirect('/')
 
 
+# TODO: Handle uploads to shared boards
 @app.route('/api/upload', methods=['POST'])
 def user_upload_from_form():
     # Debug the form output

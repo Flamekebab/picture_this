@@ -22,6 +22,19 @@ def get_user_by_user_id(user_id):
     return User.query.filter(User.user_id == user_id).first()
 
 
+def get_user_id_by_username(username):
+    return User.query.filter(User.username == username).first().user_id
+
+
+def get_board_from_id(board_id):
+    """
+    Get the board object using its ID
+    :param board_id: (int)
+    :return: board SQLAlchemy object
+    """
+    return Board.query.get(board_id)
+
+
 def get_board_name_by_board_id(board_id):
     return Board.query.filter(Board.board_id == board_id).first().name
 
@@ -54,6 +67,11 @@ def get_shared_with(board_id, user_id):
 
 
 def get_board_ids_shared_with_user(user_id):
+    """
+    Get a list of board_ids that the user has shared with them (excluding ones they themselves own)
+    :param user_id: (int)
+    :return: (list) board_id values
+    """
     all_shared_boards = []
     # We can ignore boards that the user already owns
     for board in Board.query.filter(Board.user_id != user_id).all():
@@ -61,10 +79,6 @@ def get_board_ids_shared_with_user(user_id):
             if user.user_id == user_id:
                 all_shared_boards.append(board.board_id)
     return all_shared_boards
-
-
-def get_shared_boards_from_id(board_id):
-    return Board.query.get(board_id)
 
 
 # * User registration & login * #
@@ -282,6 +296,24 @@ def board_images_for_user(user_id, board_string):
     else:
         board_images = []
     return board_images
+
+
+def board_images_for_shared_user(user_id, board_id):
+    """
+    If they have permission, return an image list, if not - don't.
+    :param user_id: (int) the user_id for the requesting user, not the owner
+    :param board_id: (int) the board the user is attempting to access
+    :return:  A list of Image objects or False
+    """
+    selected_board = Board.query.get(board_id)
+    shared_with_user_ids = []
+    for user in selected_board.shared_with:
+        shared_with_user_ids.append(user.user_id)
+    if user_id in shared_with_user_ids:
+        # This user has permission to view this board, collect the images
+        return Image.query.filter(Image.board_id == selected_board.board_id).all()
+    else:
+        return False
 
 
 def delete_image(user_id, image_id, upload_dir="uploads"):
