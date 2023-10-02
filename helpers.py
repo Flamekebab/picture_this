@@ -49,6 +49,15 @@ def get_board_id_by_board_name(board_name, user_id):
     return Board.query.filter(Board.name == board_name, Board.user_id == user_id).first().board_id
 
 
+def get_board_owner(board_id):
+    """
+    Find out which user owns this board
+    :param board_id: (int) board_id
+    :return: User object
+    """
+    return Board.query.get(board_id).user
+
+
 def get_shared_with(board_id, user_id):
     """
     Get the usernames this board is shared with, excluding the owner of the board

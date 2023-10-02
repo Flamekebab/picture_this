@@ -276,7 +276,8 @@ def user_upload_from_form():
         else:
             flash('Upload failed')
     # Redirect the user back to the board they uploaded from
-    username = helpers.get_user_by_user_id(user_id).username
+    # The username may not be theirs - they might have uploaded to a shared board
+    username = helpers.get_board_owner(board_id).username
     board_name = helpers.get_board_name_by_board_id(board_id)
     return redirect(f"/board/{username}/{board_name}")
 
