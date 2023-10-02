@@ -66,6 +66,19 @@ def get_shared_with(board_id, user_id):
     return shared_with
 
 
+def get_user_board_ids(user_id):
+    """
+    Provides a list of board_ids that a user owns
+    :param user_id: (int) User to search for boards for
+    :return: (list) board_id values
+    """
+    boards = Board.query.filter(Board.user_id == user_id)
+    board_ids = []
+    for board in boards:
+        board_ids.append(board.board_id)
+    return board_ids
+
+
 def get_board_ids_shared_with_user(user_id):
     """
     Get a list of board_ids that the user has shared with them (excluding ones they themselves own)
@@ -288,7 +301,7 @@ def create_board(name, icon, hex_code, user_id):
 
 def board_images_for_user(user_id, board_string):
     # Each board has an associated user_id
-    # Get a list of boards by that name
+    # Get a list of boards owned by them
     selected_board = Board.query.filter(Board.name == board_string, Board.user_id == user_id).first()
     if selected_board:
         # The user has that board, collect the images

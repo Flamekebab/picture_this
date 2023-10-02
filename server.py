@@ -134,6 +134,10 @@ def delete_board(selected_board, username):
         flash("Login to delete a board")
         return render_template("login.html")
 
+# TODO: Share board function
+# TODO: Unshare board function
+# TODO: Leave board function
+
 
 @app.route("/upload")
 @app.route("/upload/<string:username>/<string:selected_board>")
@@ -240,7 +244,16 @@ def user_upload_from_form():
         return render_template("login.html")
 
     notes = request.form['notes']
-    board_id = request.form['board_id']
+
+    # They've asked to upload to this board - we should check if they're actually allowed
+    board_id = int(request.form['board_id'])
+    owned_boards = helpers.get_user_board_ids(user_id)
+    shared_boards = (helpers.get_board_ids_shared_with_user(user_id))
+    available_boards = owned_boards + shared_boards
+    if board_id not in available_boards:
+        # Hey, what are you trying to pull?
+        flash(f"You do not have permission to upload to that board! (board_id {board_id})")
+        return redirect(url_for("show_upload_page"))
 
     # This may or may not be used but is always present
     url = request.form['url']
@@ -282,7 +295,7 @@ def add_board_from_form():
 
     if helpers.create_board(name, icon, color, user_id):
         flash("Board created successfully")
-        return render_template("upload.html", user=user, upload_to=name)
+        return redirect(url_for("show_upload_page"))
     else:
         flash(f"A board called {name} already exists")
         return redirect(url_for("show_boards_page"))

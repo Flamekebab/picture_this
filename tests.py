@@ -78,7 +78,7 @@ class ServerTests(unittest.TestCase):
             "user_id": 1
         }
         result = self.client.post("/api/add_board", data=form_data)
-        self.assertIn(b"Add a photo", result.data)
+        self.assertIn(b"/upload</a>", result.data)
         self.assertNotIn(b"log in</a> to access this page", result.data)
 
     def test_3_create_duplicate_board(self):
