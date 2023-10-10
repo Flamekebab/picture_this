@@ -120,6 +120,7 @@ def check_email(email):
     return user
 
 
+# TODO: Ensure only unique usernames are allowed
 def register_user(username, email, password):
     """Add a user to the database."""
     user = User(
@@ -338,6 +339,29 @@ def board_images_for_shared_user(user_id, board_id):
         return False
 
 
+def get_shareable_users(user_id, board_id):
+    """
+    Provides users that a given board can be shared with
+    (i.e. not the owner and not users the board is already shared with)
+    :param user_id: (int)
+    :param board_id: (int)
+    :return: (list) dictionaries with usernames/user_id values
+    """
+    shareable_users = []
+    for user in User.query.filter().all():
+        # Exclude the calling user
+        if user.user_id != user_id:
+            # Check if the board is already shared with that user
+            if board_id not in get_board_ids_shared_with_user(user.user_id):
+                user_details = {
+                    "username": user.username,
+                    "user_id": user.user_id
+                }
+                shareable_users.append(user_details)
+    return shareable_users
+
+
+# TODO: Add code to check if it's the thumbnail and pick a new thumbnail if it is.
 def delete_image(user_id, image_id, upload_dir="uploads"):
     # If the user has permission, delete the image
     image = Image.query.filter(Image.image_id == image_id, Image.user_id == user_id).first()

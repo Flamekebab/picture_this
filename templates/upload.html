@@ -4,8 +4,6 @@
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-lg-6">
-            {% if user %}
-
             <h1>Add a photo</h1>
             <form action="/api/upload" method="POST" enctype=multipart/form-data>
                 <div class="form-check">
@@ -64,9 +62,6 @@
 
             </form>
 
-            {% else %}
-            <p>Please <a href="/log_in">log in</a> to access this page.</p>
-            {% endif %}
         </div>
     </div>
 </div>

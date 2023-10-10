@@ -106,7 +106,7 @@ def show_single_board(selected_board, username):
             # Collect the images from the user directly
             board_images = helpers.board_images_for_user(session['user_id'], selected_board)
         else:
-            # This isn't their board - we won't show who it's shared with
+            # This isn't their board, it's shared with them - we won't show who else it's shared with
             shared_with = []
             # If they don't have permission this will simply return False
             board_images = helpers.board_images_for_shared_user(session['user_id'], board_id)
@@ -134,7 +134,31 @@ def delete_board(selected_board, username):
         flash("Login to delete a board")
         return render_template("login.html")
 
-# TODO: Share board function
+
+# TODO: Share API board function - /api/share_board
+@app.route("/share_board/<string:username>/<string:selected_board>")
+def share_board(selected_board, username):
+    """
+    Take the user to a page where they can share their board with other users
+    :param selected_board: board to share
+    :param username: username of owner
+    :return:
+    """
+    if 'user_id' in session:
+        accessing_user = helpers.get_user_by_user_id(session['user_id'])
+        board_id = helpers.get_board_id_by_board_name(selected_board, accessing_user.user_id)
+        # Potential sharers is a list of dictionaries
+        potential_sharers = helpers.get_shareable_users(accessing_user.user_id, board_id)
+        if accessing_user.username == username:
+            return render_template("share_board.html",
+                                   user=accessing_user,
+                                   selected_board=selected_board,
+                                   potential_sharers=potential_sharers
+                                   )
+    else:
+        flash("Login to share boards")
+        return render_template("login.html")
+
 # TODO: Unshare board function
 # TODO: Leave board function
 

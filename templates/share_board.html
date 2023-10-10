@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <h1>Share a Board</h1>
+            <form action="/api/share_board" method="POST" enctype=multipart/form-data>
+                {% if user['boards'] %}
+                <div class="form-group">
+                    {% for board in user['boards'] %}
+                        {% if board.name == selected_board %}
+                            <h4>Share "{{ selected_board }}" with...</h4>
+                            <input id="board_id" name="board_id" value="{{board.board_id}}" type="hidden">
+                        {% endif %}
+                    {% endfor %}
+
+                    <select class="custom-select mb-2 form-select" name="user_id" required>
+                        <option value="" selected disabled>Select a user</option>
+                        {% for user in potential_sharers %}
+                                <option value="{{user.user_id}}">{{user.username}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input class="form-control btn btn-primary" type="submit">
+                </div>
+                {% else %}
+                <div class="form-group">
+                    <p>You can't share boards you don't have! Please <a href="/board">add a board</a></p>
+                </div>
+                {% endif %}
+
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
