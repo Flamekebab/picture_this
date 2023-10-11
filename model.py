@@ -22,14 +22,6 @@ class User(db.Model):
     email = db.Column(db.String(50), nullable=False)
     password_hashed = db.Column(db.LargeBinary(128), nullable=False)
 
-    # shared_with = db.relationship('Board', secondary=shared_boards,
-    #                               backref=db.backref('shared_boards', lazy='dynamic'))
-
-    # images: a list of Image objects associated with User.
-    # relationship is established in Image model.
-    # boards: a list of Board objects associated with User.
-    # relationship is established in Board model.
-
     def get_hash(password):
         return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(15))
 

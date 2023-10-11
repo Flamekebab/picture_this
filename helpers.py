@@ -58,6 +58,7 @@ def get_board_owner(board_id):
     return Board.query.get(board_id).user
 
 
+# Sharing boards
 def get_shared_with(board_id, user_id):
     """
     Get the usernames this board is shared with, excluding the owner of the board
@@ -101,6 +102,34 @@ def get_board_ids_shared_with_user(user_id):
             if user.user_id == user_id:
                 all_shared_boards.append(board.board_id)
     return all_shared_boards
+
+
+def share_board_with_user(board_id, owner_user_id, target_user_id):
+    """
+    Add a user to a board's share_with list, assuming they can be added
+    :param board_id: (int) board to be shared with a user
+    :param owner_user_id: (int) user that owns this board
+    :param target_user_id: (int) user to share the board with
+    :return:
+    """
+    # Check that the user_id can be shared with that board
+    available_target_users = get_shareable_users(owner_user_id, board_id)
+
+    target_user = None
+    for user in available_target_users:
+        if user['user_id'] == target_user_id:
+            target_user = get_user_by_user_id(user['user_id'])
+            break
+
+    # That user isn't one of the available options, do nothing
+    if not target_user:
+        return False
+
+    # At this stage we can assume it's safe to make the requested changes
+    board = Board.query.get(board_id)
+    board.shared_with.append(target_user)
+    db.session.commit()
+    return True
 
 
 # * User registration & login * #
@@ -343,8 +372,8 @@ def get_shareable_users(user_id, board_id):
     """
     Provides users that a given board can be shared with
     (i.e. not the owner and not users the board is already shared with)
-    :param user_id: (int)
-    :param board_id: (int)
+    :param user_id: (int) owner user_id
+    :param board_id: (int) board_id
     :return: (list) dictionaries with usernames/user_id values
     """
     shareable_users = []

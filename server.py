@@ -110,6 +110,9 @@ def show_single_board(selected_board, username):
             shared_with = []
             # If they don't have permission this will simply return False
             board_images = helpers.board_images_for_shared_user(session['user_id'], board_id)
+
+        # The images should be *newest* first
+        board_images.reverse()
         return render_template("single_board.html",
                                user=accessing_user,
                                selected_board=selected_board,
@@ -135,7 +138,6 @@ def delete_board(selected_board, username):
         return render_template("login.html")
 
 
-# TODO: Share API board function - /api/share_board
 @app.route("/share_board/<string:username>/<string:selected_board>")
 def share_board(selected_board, username):
     """
@@ -257,7 +259,6 @@ def log_out():
     return redirect('/')
 
 
-# TODO: Handle uploads to shared boards
 @app.route('/api/upload', methods=['POST'])
 def user_upload_from_form():
     # Debug the form output
@@ -324,6 +325,34 @@ def add_board_from_form():
     else:
         flash(f"A board called {name} already exists")
         return redirect(url_for("show_boards_page"))
+
+
+@app.route('/api/share_board', methods=['POST'])
+def share_board_from_form():
+    if 'user_id' in session:
+        user = helpers.get_user_by_user_id(session['user_id'])
+        target_board_id = int(request.form['board_id'])
+        target_user_id = int(request.form['user_id'])
+
+        # Do not trust the form - check that the board ID is actually one the user owns
+        target_board = None
+        for board in user.boards:
+            if board.board_id == target_board_id:
+                target_board = board
+                break
+        if not target_board:
+            flash(f"You don't have permission to share that board...")
+            return redirect(url_for("show_boards_page"))
+
+        # If the user has somehow passed in a user_id that the board can't be shared with the helper will handle it.
+        if not helpers.share_board_with_user(target_board.board_id, user.user_id, target_user_id):
+            flash("Cannot share board with that user.")
+            return redirect(url_for("show_boards_page"))
+        else:
+            flash(f"Shared {target_board.name} with {helpers.get_user_by_user_id(target_user_id).username}")
+            return redirect(url_for("show_boards_page"))
+    else:
+        return render_template("login.html")
 
 
 if __name__ == "__main__":
