@@ -19,7 +19,7 @@
             <div class="mb-4">
                 Shared with:
                 {% for sharer in shared_with %}
-                <span class="badge rounded-pill bg-success">{{ sharer }} <a href="/unshare/{{owner_username}}/{{selected_board}}/{{sharer}}"><i class="fa-solid fa-circle-xmark text-white"></i></a></span>
+                <span class="badge rounded-pill bg-success">{{ sharer }} <a href="/unshare_board/{{owner_username}}/{{selected_board}}/{{sharer}}"><i class="fa-solid fa-circle-xmark text-white"></i></a></span>
                 {% endfor %}
             </div>
     {% endif %}
