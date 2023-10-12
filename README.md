@@ -108,8 +108,8 @@ You can use your browser's dev tools to manually clear the session.
 
 Rewritten by Flamekebab (as I'm not Cori!):
 
-1. Shared boards
-2. Tagging
+1. Thumbnail bugfixing
+2. Tagging?
 3. Private images?
 4. Pagination and lazy loading?
 
