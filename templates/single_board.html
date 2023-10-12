@@ -12,7 +12,7 @@
             <a class="btn btn-secondary d-inline" href="/share_board/{{owner_username}}/{{selected_board}}"><i class="fa-solid fa-handshake-simple"></i> Share </a>
             {% else %}
             {# The only other reason the board would be visible is if it's shared #}
-            <a class="btn btn-warning d-inline" href="/leave_board/{{owner_username}}/{{selected_board}}/{{user.user_id}}"><i class="fas fa-trash mr-2"></i> Leave board </a>
+            <a class="btn btn-warning d-inline" href="/leave_board/{{owner_username}}/{{selected_board}}/{{user.username}}"><i class="fas fa-trash mr-2"></i> Leave board </a>
             {% endif %}
         </div>
         {% if shared_with %}

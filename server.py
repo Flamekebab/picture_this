@@ -163,30 +163,50 @@ def share_board(selected_board, username):
 
 
 @app.route("/unshare_board/<string:owner_username>/<string:selected_board>/<string:user_to_remove>")
+@app.route("/leave_board/<string:owner_username>/<string:selected_board>/<string:user_to_remove>")
 def un_share_board(owner_username, selected_board, user_to_remove):
     """
     Remove a user from the shared_with list of the selected board
-    :param owner_username: username of owner
+    :param owner_username: username of board owner
     :param selected_board: board to remove a guest from
     :param user_to_remove: username of guest to remove
     :return:
     """
     if 'user_id' in session:
+        # Either the owner or the guest can remove themselves
         accessing_user = helpers.get_user_by_user_id(session['user_id'])
-        board_id = helpers.get_board_id_by_board_name(selected_board, accessing_user.user_id)
-        target_user_id = helpers.get_user_id_by_username(user_to_remove)
-        if accessing_user.username == owner_username:
-            if helpers.unshare_board_with_user(board_id, target_user_id):
+        owner = helpers.get_user_by_user_id(helpers.get_user_id_by_username(owner_username))
+        target_user = helpers.get_user_by_user_id(helpers.get_user_id_by_username(user_to_remove))
+
+        board_id = helpers.get_board_id_by_board_name(selected_board, owner.user_id)
+
+        # If they're the owner they can remove the guest
+        if accessing_user.user_id == owner.user_id:
+            if helpers.unshare_board_with_user(board_id, target_user.user_id):
                 flash(f"Removed {user_to_remove} from {selected_board}")
                 return redirect(f"/board/{owner_username}/{selected_board}")
             else:
                 flash(f"Unable to remove {user_to_remove} from {selected_board}")
                 return redirect(f"/board/{owner_username}/{selected_board}")
-
+        elif accessing_user.user_id == target_user.user_id:
+            # If they're in the guest list they can remove themselves
+            if accessing_user.username in helpers.get_shared_with(board_id, owner.user_id):
+                if helpers.unshare_board_with_user(board_id, accessing_user.user_id):
+                    flash(f"You left {selected_board}")
+                    # Redirect them to their boards page
+                    return redirect(url_for("show_boards_page"))
+                else:
+                    flash(f"Unable to leave {selected_board}")
+                    return redirect(f"/board/{owner_username}/{selected_board}")
+            else:
+                flash(f"I don't think you're allowed to do that...")
+                return redirect(f"/board/{owner_username}/{selected_board}")
+        else:
+            flash(f"Error - are you sure you have permission to unshare/leave this board?")
+            return redirect(f"/board/{owner_username}/{selected_board}")
     else:
         flash("Login to unshare boards")
         return render_template("login.html")
-# TODO: Leave board function
 
 
 @app.route("/upload")
