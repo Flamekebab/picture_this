@@ -107,13 +107,7 @@ if __name__ == '__main__':
     connect_to_db(app)
     # This file can be run to debug database queries
     # Y'know... here
-    print(User.query.filter(User.email == "guppy@thecat.com").first())
-    test_board = Board.query.filter().first()
-    # test_users = User.query.filter(User.user_id != 1)
-    # for test_user in test_users:
-    #     test_board.shared_with.append(test_user)
-    print(test_board.shared_with)
-    boards = User.query.get(3).shared_boards
-    for board in boards:
-        print(board)
+    # image = Image.query.filter(Image.image_id == 2, Image.user_id == 1).first()
+    # other_images = Image.query.filter(Image.board_id == image.board_id, Image.image_id != image.image_id).all()
+    # print(other_images)
     # db.session.commit()

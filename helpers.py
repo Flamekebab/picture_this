@@ -1,7 +1,9 @@
 import os
+import shutil
 from pathlib import Path
 import urllib.request
 from urllib.parse import urlparse
+from urllib.error import HTTPError
 
 import sqlalchemy.exc
 from PIL import Image as PillowImage
@@ -166,7 +168,6 @@ def check_email(email):
     return user
 
 
-# TODO: Ensure only unique usernames are allowed
 def register_user(username, email, password):
     """Add a user to the database."""
     user = User(
@@ -208,20 +209,24 @@ def upload_image(input_image, notes, user_id, board_id, private=False, upload_di
             # This is complicated by needing user-agent stuff to stop webservers immediately ignoring the request
             image_request = urllib.request.Request(input_image,
                                                    headers={'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)'})
-            response = urllib.request.urlopen(image_request)
-            # Assuming all goes well, output it to a file
-            if response.status == 200:
-                # with open(f"./static/images/{image_id}{file_extension}", "wb") as file:)
-                with open(f"{upload_dir}/{image_id}{file_extension}", "wb") as file:
-                    file.write(response.read())
-                url = input_image
-            else:
+            try:
+                response = urllib.request.urlopen(image_request)
+            except HTTPError as exc:
+                logging.debug(f"Failed to request file: {exc}")
                 return False
+            # Assuming all goes well, output it to a file
+            # with open(f"./static/images/{image_id}{file_extension}", "wb") as file:)
+            with open(f"{upload_dir}/{image_id}{file_extension}", "wb") as file:
+                file.write(response.read())
+            url = input_image
     else:
         # Deal with a local file instead
         logging.info(f"File to add: {input_image.filename}")
         input_image.filename = secure_filename(input_image.filename)
         file_extension = os.path.splitext(input_image.filename)[1].lower()
+        if not uploaded_file_checker(input_image.filename):
+            logging.debug(f"Failed to save file. File type not permitted ({file_extension})")
+            return False
         # Save the file locally
         try:
             input_image.save(os.path.join(upload_dir, f"{image_id}{file_extension}"))
@@ -297,15 +302,20 @@ def thumbnail_generator(image_path):
 
 def board_thumbnail_set(board_id, image_id):
     """
-    Update (or set) the thumbnail for a board
+    Update (or set) the thumbnail for a board (assuming that image is part of that board)
 
-    :param board_id: the board to update the thumbnail of
-    :param image_id: the image_id to set as the board thumbnail
+    :param (int) board_id: the board to update the thumbnail of
+    :param (int) image_id: the image_id to set as the board thumbnail
     :return:
     """
-    board = Board.query.filter(Board.board_id == board_id).first()
-    board.thumbnail_id = image_id
-    db.session.commit()
+    board = Board.query.get(board_id)
+    image = Image.query.get(image_id)
+    if image.board_id == board_id:
+        board.thumbnail = f"{image_id}.webp"
+        db.session.commit()
+        return True
+    else:
+        return False
 
 
 def webp_if_larger(image_path):
@@ -407,11 +417,16 @@ def get_shareable_users(user_id, board_id):
     return shareable_users
 
 
-# TODO: Add code to check if it's the thumbnail and pick a new thumbnail if it is.
 def delete_image(user_id, image_id, upload_dir="uploads"):
     # If the user has permission, delete the image
     image = Image.query.filter(Image.image_id == image_id, Image.user_id == user_id).first()
     if image:
+        board = Board.query.get(image.board_id)
+        if f"{image.image_id}{image.file_extension}" == board.thumbnail:
+            # This image is the board's thumbnail - we should replace the board's thumbnail
+            # It might be present already - it's really not worth checking
+            shutil.copyfile("./static/images/no_thumbnail.webp", f"{upload_dir}/no_thumbnail.webp")
+            board.thumbnail = "no_thumbnail.webp"
         os.remove(f"{upload_dir}/{image_id}{image.file_extension}")
         os.remove(f"{upload_dir}/thumbnails/{image_id}.webp")
         db.session.delete(image)

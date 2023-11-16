@@ -2,12 +2,17 @@ from werkzeug.datastructures import FileStorage
 import shutil
 import unittest
 import os
+
+import helpers
+
 os.environ['PT_TESTING_MODE'] = 'True'
 os.system('export PT_TESTING_MODE')
 from server import app
 from model import db
+from helpers import *
 
 
+# TODO sharing tests
 class ServerTests(unittest.TestCase):
     """Tests for Picture This app."""
 
@@ -182,6 +187,84 @@ class ServerTests(unittest.TestCase):
             # A list of tuples - e.g. [('message', 'honey badgers deleted!')]
             flash_messages = session['_flashes']
         self.assertEqual(flash_messages[0][1], "honey badgers deleted!")
+
+    def tearDown(self):
+        """Code to run after every test"""
+        db.session.remove()
+
+    @classmethod
+    def tearDownClass(cls):
+        # Delete the database
+        db.drop_all()
+        db.engine.dispose()
+        # Delete the files we uploaded
+        shutil.rmtree("./test_uploads/")
+
+
+class HelperTests(unittest.TestCase):
+    """Tests for helper functions."""
+
+    @classmethod
+    def setUpClass(cls):
+        # Create the database
+        db.create_all()
+        # Create the temporary upload directories
+        os.makedirs(os.path.dirname("./test_uploads/thumbnails/"), exist_ok=True)
+
+        helpers.register_user("Guppy", "guppy@thecat.com", "badpw")
+        helpers.create_board("honey badgers", "fas fa-badger-honey", "#FFC0CB", 1)
+
+    def setUp(self):
+        """Code to run before every test."""
+        self.client = app.test_client()  # test_client from Werkzeug library returns a "browser" to "run" app
+
+    def test_1_get_all_users_1(self):
+        user_list = helpers.get_all_users()
+        self.assertEqual(len(user_list), 1)
+        self.assertEqual(user_list[0].username, "Guppy")
+
+    def test_1_get_all_users_2(self):
+        # Create another user, partly because later tests need multiple users
+        helpers.register_user("Loja", "loja@thecat.com", "vbadpw")
+
+        user_list = helpers.get_all_users()
+        self.assertEqual(len(user_list), 2)
+        self.assertEqual(user_list[1].email, "loja@thecat.com")
+
+    def test_1_upload_image_invalid_type(self):
+        self.assertFalse(helpers.upload_image("https://pt.test/invalid.image", "", 1, 1))
+
+    def test_1_upload_image_invalid_url(self):
+        self.assertFalse(helpers.upload_image("https://upload.wikimedia.org/Manul1a.jpg", "", 1, 1))
+
+    def test_1_upload_image_valid_url(self):
+        self.assertTrue(helpers.upload_image("https://upload.wikimedia.org/wikipedia/commons/9/92/Manul1a.jpg",
+                                             "Testing uploads through the medium of pallas cats",
+                                             1,
+                                             1))
+
+    def test_1_get_user_id_by_username(self):
+        user_id = helpers.get_user_id_by_username("Guppy")
+        self.assertEqual(user_id, 1)
+
+    def test_1_get_board_from_id(self):
+        board = helpers.get_board_from_id(1)
+        self.assertEqual(board.name, "honey badgers")
+
+    def test_1_get_board_id_by_board_name(self):
+        self.assertEqual(helpers.get_board_id_by_board_name("honey badgers", 1), 1)
+
+    def test_2_board_thumbnail_set_valid(self):
+        self.assertTrue(helpers.board_thumbnail_set(1, 1))
+
+    def test_2_get_shareable_users(self):
+        user_list = helpers.get_shareable_users(1, 1)
+        self.assertEqual(user_list[0]['username'], "Loja")
+        self.assertEqual(user_list[0]['user_id'], 2)
+
+    # This test has to happen after other boards and images exist
+    # def test_3_board_thumbnail_set_invalid(self):
+    #     self.assertFalse(helpers.board_thumbnail_set(1, 2))
 
     def tearDown(self):
         """Code to run after every test"""

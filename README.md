@@ -104,11 +104,18 @@ If you've logged in as the demo account and not logged out then the server will 
 access the site with an invalid session (e.g. if you've wiped the database without logging out).
 You can use your browser's dev tools to manually clear the session.
 
+You can also run tests using Coverage:
+
+```
+coverage run tests.py
+python -m coverage html
+```
+
 ## What's next? :thinking:
 
 Rewritten by Flamekebab (as I'm not Cori!):
 
-1. Thumbnail bugfixing
+1. Bugfixing
 2. Tagging?
 3. Private images?
 4. Pagination and lazy loading?
