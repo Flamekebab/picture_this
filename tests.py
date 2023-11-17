@@ -55,6 +55,12 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(result.status_code, 200)
         self.assertIn(b"Log Your Bad Self In", result.data)
 
+    def test_server_1_registration_page(self):
+        """Does registration page load?"""
+        result = self.client.get("/register")
+        self.assertEqual(result.status_code, 200)
+        self.assertIn(b"Register", result.data)
+
     def test_server_2_register(self):
         """Can we register a user?"""
         form_data = {
@@ -107,6 +113,15 @@ class ServerTests(unittest.TestCase):
         result = self.client.post("/api/log_in", data=form_data)
         # The redirecting message mentions /my_images, the destination users go to after logging in
         self.assertIn(b">/my_images</a>", result.data)
+
+        # If we're already logged in it should redirect
+        with self.client.session_transaction() as session:
+            session['user_id'] = 1
+            session['username'] = 'Guppy'
+
+            result = self.client.get("/log_in")
+            self.assertEqual(result.status_code, 200)
+            self.assertIn(b"My Images", result.data)
 
     def test_server_3_create_board(self):
         """Can a registered user create a board?"""
