@@ -102,9 +102,10 @@ def connect_to_db(flask_app, echo=True):
 
 
 if __name__ == '__main__':
-    from server import app
-
-    connect_to_db(app)
+    pass
+    # from server import app
+    #
+    # connect_to_db(app)
     # This file can be run to debug database queries
     # Y'know... here
     # image = Image.query.filter(Image.image_id == 2, Image.user_id == 1).first()

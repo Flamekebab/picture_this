@@ -1,5 +1,4 @@
 from werkzeug.datastructures import FileStorage
-import shutil
 import unittest
 import os
 
@@ -8,11 +7,9 @@ import helpers
 os.environ['PT_TESTING_MODE'] = 'True'
 os.system('export PT_TESTING_MODE')
 from server import app
-from model import db
 from helpers import *
 
 
-# TODO sharing tests
 class ServerTests(unittest.TestCase):
     """Tests for Picture This app."""
 
@@ -27,25 +24,25 @@ class ServerTests(unittest.TestCase):
         """Code to run before every test."""
         self.client = app.test_client()  # test_client from Werkzeug library returns a "browser" to "run" app
 
-    def test_1_homepage(self):
+    def test_server_1_homepage(self):
         """Does homepage load at all?"""
         result = self.client.get("/")
         self.assertEqual(result.status_code, 200)
         self.assertIn(b"Log Your Bad Self In", result.data)
 
-    def test_1_logged_out_my_images(self):
+    def test_server_1_logged_out_my_images(self):
         """Does the My Images page load without login?"""
         result = self.client.get("/my_images")
         self.assertEqual(result.status_code, 200)
         self.assertIn(b"Log Your Bad Self In", result.data)
 
-    def test_1_logged_out_upload_page(self):
+    def test_server_1_logged_out_upload_page(self):
         """Does Upload page load but actually redirect?"""
         result = self.client.get("/upload")
         self.assertEqual(result.status_code, 200)
         self.assertIn(b"Log Your Bad Self In", result.data)
 
-    def test_1_upload_api_logged_out(self):
+    def test_server_1_upload_api_logged_out(self):
         """Does uploading without being logged in fail as it should?"""
         # (I've swapped the URL for one I expect to be reliable for years to come)
         form_data = {
@@ -58,7 +55,7 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(result.status_code, 200)
         self.assertIn(b"Log Your Bad Self In", result.data)
 
-    def test_2_register(self):
+    def test_server_2_register(self):
         """Can we register a user?"""
         form_data = {
             "username": "Guppy",
@@ -66,11 +63,52 @@ class ServerTests(unittest.TestCase):
             "password": "badpw",
         }
         result = self.client.post("/api/register_user", data=form_data)
-        # Success renders the login page, failure redirects to root
+        # Success renders the login page, failure redirects to registration page
         self.assertEqual(result.status_code, 200)
         self.assertIn(b"Log Your Bad Self In", result.data)
 
-    def test_3_create_board(self):
+        # Repeat the process to try to coax failures
+        form_data = {
+            "username": "Guppy",
+            "email": "guppy2@thecat.com",
+            "password": "badpw",
+        }
+        result = self.client.post("/api/register_user", data=form_data)
+        self.assertIn(b"/register</a>", result.data)
+
+        form_data = {
+            "username": "Guppy2",
+            "email": "guppy@thecat.com",
+            "password": "badpw",
+        }
+        result = self.client.post("/api/register_user", data=form_data)
+        self.assertIn(b"/register</a>", result.data)
+
+    def test_server_3_login(self):
+        """Attempt various logins"""
+        form_data = {
+            "email": "guppy@thecat.com",
+            "password": "wrong",
+        }
+        result = self.client.post("/api/log_in", data=form_data)
+        self.assertIn(b"Incorrect password!", result.data)
+        # Try logging in using an email address that doesn't exist
+        form_data = {
+            "email": "cricket@thedog.com",
+            "password": "badpw",
+        }
+        result = self.client.post("/api/log_in", data=form_data)
+        self.assertIn(b"Email doesn&#39;t exist in database!", result.data)
+        # How about the correct details:
+        form_data = {
+            "email": "guppy@thecat.com",
+            "password": "badpw",
+        }
+        result = self.client.post("/api/log_in", data=form_data)
+        # The redirecting message mentions /my_images, the destination users go to after logging in
+        self.assertIn(b">/my_images</a>", result.data)
+
+    def test_server_3_create_board(self):
         """Can a registered user create a board?"""
         with self.client.session_transaction() as session:
             session['user_id'] = 1
@@ -86,7 +124,7 @@ class ServerTests(unittest.TestCase):
         self.assertIn(b"/upload</a>", result.data)
         self.assertNotIn(b"log in</a> to access this page", result.data)
 
-    def test_3_create_duplicate_board(self):
+    def test_server_3_create_duplicate_board(self):
         """Does the app refuse to create a duplicate board?"""
         with self.client.session_transaction() as session:
             session['user_id'] = 1
@@ -106,7 +144,7 @@ class ServerTests(unittest.TestCase):
             flash_messages = session['_flashes']
         self.assertEqual(flash_messages[0][1], "A board called honey badgers already exists")
 
-    def test_4_upload_from_url(self):
+    def test_server_4_upload_from_url(self):
         """Can we upload an image from a URL?"""
         with self.client.session_transaction() as session:
             session['user_id'] = 1
@@ -122,7 +160,7 @@ class ServerTests(unittest.TestCase):
         result = self.client.post("/api/upload", data=form_data)
         self.assertIn(b"/board/Guppy/honey badgers", result.data)
 
-    def test_5_my_images_logged_in(self):
+    def test_server_5_my_images_logged_in(self):
         """Does the My Images page load when logged in?"""
         with self.client.session_transaction() as session:
             session['user_id'] = 1
@@ -132,7 +170,7 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(result.status_code, 200)
         self.assertIn(b"pallas cats", result.data)
 
-    def test_6_upload_from_file(self):
+    def test_server_6_upload_from_file(self):
         """Can we upload from a file?"""
         with self.client.session_transaction() as session:
             session['user_id'] = 1
@@ -154,7 +192,7 @@ class ServerTests(unittest.TestCase):
             result = self.client.post("/api/upload", data=form_data)
         self.assertIn(b"/board/Guppy/honey badgers", result.data)
 
-    def test_7_delete_image(self):
+    def test_server_7_delete_image(self):
         """Can we delete images with the appropriate credentials?"""
         # First without being logged in:
         self.client.get("/delete/1")
@@ -175,7 +213,7 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(flash_messages[0][1], "Login to delete images")
         self.assertEqual(flash_messages[1][1], "Image deleted successfully")
 
-    def test_8_delete_board(self):
+    def test_server_8_delete_board(self):
         """Can we delete a board?"""
         with self.client.session_transaction() as session:
             session['user_id'] = 1
@@ -218,12 +256,12 @@ class HelperTests(unittest.TestCase):
         """Code to run before every test."""
         self.client = app.test_client()  # test_client from Werkzeug library returns a "browser" to "run" app
 
-    def test_1_get_all_users_1(self):
+    def test_helpers_1_get_all_users_1(self):
         user_list = helpers.get_all_users()
         self.assertEqual(len(user_list), 1)
         self.assertEqual(user_list[0].username, "Guppy")
 
-    def test_1_get_all_users_2(self):
+    def test_helpers_1_get_all_users_2(self):
         # Create another user, partly because later tests need multiple users
         helpers.register_user("Loja", "loja@thecat.com", "vbadpw")
 
@@ -231,43 +269,88 @@ class HelperTests(unittest.TestCase):
         self.assertEqual(len(user_list), 2)
         self.assertEqual(user_list[1].email, "loja@thecat.com")
 
-    def test_1_upload_image_invalid_type(self):
+    def test_helpers_1_upload_image_invalid_type(self):
         self.assertFalse(helpers.upload_image("https://pt.test/invalid.image", "", 1, 1))
 
-    def test_1_upload_image_invalid_url(self):
+    def test_helpers_1_upload_image_invalid_url(self):
         self.assertFalse(helpers.upload_image("https://upload.wikimedia.org/Manul1a.jpg", "", 1, 1))
 
-    def test_1_upload_image_valid_url(self):
+    def test_helpers_1_upload_image_valid_url(self):
         self.assertTrue(helpers.upload_image("https://upload.wikimedia.org/wikipedia/commons/9/92/Manul1a.jpg",
                                              "Testing uploads through the medium of pallas cats",
                                              1,
                                              1))
 
-    def test_1_get_user_id_by_username(self):
+    def test_helpers_1_get_user_id_by_username(self):
         user_id = helpers.get_user_id_by_username("Guppy")
         self.assertEqual(user_id, 1)
 
-    def test_1_get_board_from_id(self):
+    def test_helpers_1_get_board_from_id(self):
         board = helpers.get_board_from_id(1)
         self.assertEqual(board.name, "honey badgers")
 
-    def test_1_get_board_id_by_board_name(self):
+    def test_helpers_1_get_board_id_by_board_name(self):
         self.assertEqual(helpers.get_board_id_by_board_name("honey badgers", 1), 1)
 
-    def test_2_board_thumbnail_set_valid(self):
+    def test_helpers_1_delete_image_unsuccessfully(self):
+        self.assertFalse(helpers.delete_image(1, 3))
+
+    def test_helpers_1_delete_board_unsuccessfully(self):
+        self.assertFalse(helpers.delete_board(1, 3))
+
+    def test_helpers_2_board_images_for_user_found(self):
+        self.assertEqual(len(helpers.board_images_for_user(1, "honey badgers")), 1)
+
+    def test_helpers_2_board_thumbnail_set_valid(self):
         self.assertTrue(helpers.board_thumbnail_set(1, 1))
 
-    def test_2_get_shareable_users(self):
+    def test_helpers_2_get_shareable_users(self):
         user_list = helpers.get_shareable_users(1, 1)
         self.assertEqual(user_list[0]['username'], "Loja")
         self.assertEqual(user_list[0]['user_id'], 2)
 
-    def test_2_get_images_by_user(self):
+    def test_helpers_2_get_images_by_user(self):
         self.assertEqual(len(helpers.get_images_by_user(1)), 1)
+        self.assertEqual(len(helpers.board_images_for_user(2, "honey badgers")), 0)
 
-    # This test has to happen after other boards and images exist
-    # def test_3_board_thumbnail_set_invalid(self):
-    #     self.assertFalse(helpers.board_thumbnail_set(1, 2))
+    def test_helpers_3_board_thumbnail_set_invalid(self):
+        helpers.create_board("Loja's board", "fas fa-badger-honey", "#FFC0CB", 2)
+        helpers.upload_image("https://upload.wikimedia.org/wikipedia/commons/9/92/Manul1a.jpg",
+                             "Same image but different board and user",
+                             2,
+                             2)
+        self.assertFalse(helpers.board_thumbnail_set(1, 2))
+
+    def test_helpers_3_get_board_ids_shared_with_user_empty(self):
+        self.assertCountEqual(helpers.get_board_ids_shared_with_user(1), [])
+
+    def test_helpers_4_share_board_with_user(self):
+        # The user that owns the board isn't a valid target to share with
+        self.assertFalse(helpers.share_board_with_user(1, 1, 1))
+        # The user that doesn't own the board can't request the board be shared with them
+        self.assertFalse(helpers.share_board_with_user(1, 2, 2))
+        # The owner (1) can share it with a viable target (2)
+        self.assertTrue(helpers.share_board_with_user(1, 1, 2))
+
+    def test_helpers_5_get_board_ids_shared_with_user(self):
+        self.assertCountEqual(helpers.get_board_ids_shared_with_user(2), [1])
+
+    def test_helpers_5_get_shared_with(self):
+        self.assertEqual(helpers.get_shared_with(1, 1), ["Loja"])
+
+    def test_helpers_5_board_images_for_shared_user(self):
+        # The board isn't shared with the owner so this shouldn't provide images:
+        self.assertFalse(helpers.board_images_for_shared_user(1, 1))
+        # ...and a simple check for expected results
+        self.assertEqual(len(helpers.board_images_for_shared_user(2, 1)), 1)
+
+    def test_helpers_6_unshare_board_with_user(self):
+        # Can't unshare your own board from yourself!
+        self.assertFalse(helpers.unshare_board_with_user(1, 1))
+
+    def test_helpers_7_unshare_board_with_user(self):
+        # Combining this with the above test raises an sqlalchemy.orm.exc.StaleDataError for some reason
+        self.assertTrue(helpers.unshare_board_with_user(1, 2))
 
     def tearDown(self):
         """Code to run after every test"""

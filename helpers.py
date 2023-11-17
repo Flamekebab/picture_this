@@ -31,7 +31,7 @@ def get_user_id_by_username(username):
 def get_board_from_id(board_id):
     """
     Get the board object using its ID
-    :param board_id: (int)
+    :param (int) board_id:
     :return: board SQLAlchemy object
     """
     return Board.query.get(board_id)
@@ -44,8 +44,8 @@ def get_board_name_by_board_id(board_id):
 def get_board_id_by_board_name(board_name, user_id):
     """
     Board names aren't unique but they are per-user.
-    :param board_name: str
-    :param user_id: int
+    :param (str) board_name:
+    :param (int) user_id:
     :return: (int) the id of the board requested
     """
     return Board.query.filter(Board.name == board_name, Board.user_id == user_id).first().board_id
@@ -54,7 +54,7 @@ def get_board_id_by_board_name(board_name, user_id):
 def get_board_owner(board_id):
     """
     Find out which user owns this board
-    :param board_id: (int) board_id
+    :param (int) board_id: board_id
     :return: User object
     """
     return Board.query.get(board_id).user
@@ -64,8 +64,8 @@ def get_board_owner(board_id):
 def get_shared_with(board_id, user_id):
     """
     Get the usernames this board is shared with, excluding the owner of the board
-    :param board_id: (int) requested board
-    :param user_id: (int) owner of the board
+    :param (int) board_id: requested board
+    :param (int) user_id: owner of the board
     :return: (list) a list of usernames
     """
     # Get queries based on the primary key, unlike a filter
@@ -94,7 +94,7 @@ def get_user_board_ids(user_id):
 def get_board_ids_shared_with_user(user_id):
     """
     Get a list of board_ids that the user has shared with them (excluding ones they themselves own)
-    :param user_id: (int)
+    :param (int) user_id: target user
     :return: (list) board_id values
     """
     all_shared_boards = []
@@ -109,9 +109,9 @@ def get_board_ids_shared_with_user(user_id):
 def share_board_with_user(board_id, owner_user_id, target_user_id):
     """
     Add a user to a board's share_with list, assuming they can be added
-    :param board_id: (int) board to be shared with a user
-    :param owner_user_id: (int) user that owns this board
-    :param target_user_id: (int) user to share the board with
+    :param (int) board_id: board to be shared with a user
+    :param (int) owner_user_id: user that owns this board
+    :param (int) target_user_id: user to share the board with
     :return:
     """
     # Check that the user_id can be shared with that board
@@ -366,6 +366,12 @@ def create_board(name, icon, hex_code, user_id):
 
 
 def board_images_for_user(user_id, board_string):
+    """
+    Request a board by its name, supplying the user id associated with it.
+    :param (int) user_id: the user who owns the board
+    :param (str) board_string: the exact name of the board
+    :return: (list) list of SQLAlchemy Image objects
+    """
     # Each board has an associated user_id
     # Get a list of boards owned by them
     selected_board = Board.query.filter(Board.name == board_string, Board.user_id == user_id).first()
@@ -380,8 +386,8 @@ def board_images_for_user(user_id, board_string):
 def board_images_for_shared_user(user_id, board_id):
     """
     If they have permission, return an image list, if not - don't.
-    :param user_id: (int) the user_id for the requesting user, not the owner
-    :param board_id: (int) the board the user is attempting to access
+    :param (int) user_id: the user_id for the requesting user, not the owner
+    :param (int) board_id: the board the user is attempting to access
     :return:  A list of Image objects or False
     """
     selected_board = Board.query.get(board_id)
@@ -399,8 +405,8 @@ def get_shareable_users(user_id, board_id):
     """
     Provides users that a given board can be shared with
     (i.e. not the owner and not users the board is already shared with)
-    :param user_id: (int) owner user_id
-    :param board_id: (int) board_id
+    :param (int) user_id: owner user_id
+    :param (int) board_id: board_id
     :return: (list) dictionaries with usernames/user_id values
     """
     shareable_users = []

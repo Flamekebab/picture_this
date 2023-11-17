@@ -34,7 +34,7 @@ def uploads(filename):
 
 @app.route("/register")
 def register():
-    """Return home page."""
+    """Provide a registration form."""
 
     return render_template("register.html")
 
@@ -270,7 +270,7 @@ def register_new_user():
         return render_template("login.html")
     else:
         flash('Try again with a different username and email!')
-        return redirect('/')
+        return redirect('/register')
 
 
 @app.route('/api/log_in', methods=['POST'])
