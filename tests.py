@@ -262,6 +262,9 @@ class HelperTests(unittest.TestCase):
         self.assertEqual(user_list[0]['username'], "Loja")
         self.assertEqual(user_list[0]['user_id'], 2)
 
+    def test_2_get_images_by_user(self):
+        self.assertEqual(len(helpers.get_images_by_user(1)), 1)
+
     # This test has to happen after other boards and images exist
     # def test_3_board_thumbnail_set_invalid(self):
     #     self.assertFalse(helpers.board_thumbnail_set(1, 2))

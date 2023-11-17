@@ -425,7 +425,7 @@ def delete_image(user_id, image_id, upload_dir="uploads"):
         if f"{image.image_id}{image.file_extension}" == board.thumbnail:
             # This image is the board's thumbnail - we should replace the board's thumbnail
             # It might be present already - it's really not worth checking
-            shutil.copyfile("./static/images/no_thumbnail.webp", f"{upload_dir}/no_thumbnail.webp")
+            shutil.copyfile("./static/img/no_thumbnail.webp", f"{upload_dir}/no_thumbnail.webp")
             board.thumbnail = "no_thumbnail.webp"
         os.remove(f"{upload_dir}/{image_id}{image.file_extension}")
         os.remove(f"{upload_dir}/thumbnails/{image_id}.webp")
