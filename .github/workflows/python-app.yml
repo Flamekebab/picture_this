@@ -19,9 +19,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Create neded directories
-        run: mkdir uploads && mkdir uploads/thumbnails
-
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
