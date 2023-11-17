@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from werkzeug.datastructures import FileStorage
 import unittest
 import os
@@ -271,6 +273,10 @@ class HelperTests(unittest.TestCase):
         """Code to run before every test."""
         self.client = app.test_client()  # test_client from Werkzeug library returns a "browser" to "run" app
 
+    def test_1_helpers_check_email(self):
+        """Pass in an email address that's not in the database"""
+        self.assertRaises(TypeError, helpers.check_email("cricket@thedog.com"))
+
     def test_helpers_1_get_all_users_1(self):
         user_list = helpers.get_all_users()
         self.assertEqual(len(user_list), 1)
@@ -289,6 +295,37 @@ class HelperTests(unittest.TestCase):
 
     def test_helpers_1_upload_image_invalid_url(self):
         self.assertFalse(helpers.upload_image("https://upload.wikimedia.org/Manul1a.jpg", "", 1, 1))
+
+    def test_helpers_1_upload_image_file(self):
+        class InputImage:
+            def __init__(self, filename):
+                self.filename = filename
+
+            # When attempting to save this fake file object, raise an exception
+            def save(self, path):
+                raise Exception
+
+        input_image = InputImage(
+            filename="invalid.file")
+        self.assertFalse(helpers.upload_image(input_image,
+                                              "This file is the wrong type",
+                                              1,
+                                              1,
+                                              file_or_url="file"))
+
+        input_image = InputImage(
+            filename="valid.jpg")
+        self.assertFalse(helpers.upload_image(input_image,
+                                              "This file doesn't save",
+                                              1,
+                                              1,
+                                              file_or_url="file"))
+
+    @patch('os.path.getsize')
+    def test_helpers_1_webp_if_larger(self, mock_getsize):
+        """What if the JPG is smaller than the WebP?"""
+        mock_getsize.return_value = 1000
+        self.assertFalse(helpers.webp_if_larger("./static/img/journaly.jpg"))
 
     def test_helpers_1_upload_image_valid_url(self):
         self.assertTrue(helpers.upload_image("https://upload.wikimedia.org/wikipedia/commons/9/92/Manul1a.jpg",
