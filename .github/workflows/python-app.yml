@@ -9,6 +9,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    env:
+      PT_TESTING_MODE: True
+      PT_SECRET_KEY: "github-actions-key"
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
