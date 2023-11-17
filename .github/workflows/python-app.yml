@@ -34,9 +34,13 @@ jobs:
         run: |
           python -m coverage run -m unittest discover
           python -m coverage html
+          python -m coverage report > coverage.txt
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v2
         with:
           name: coverage-report
           path: htmlcov
+
+      - name: Display coverage report
+        run: cat coverage.txt
