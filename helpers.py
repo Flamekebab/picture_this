@@ -442,6 +442,7 @@ def delete_image(user_id, image_id, upload_dir="uploads"):
         return False
 
 
+# TODO fix the delete board functionality!
 def delete_board(user_id, board_string, upload_dir="uploads"):
     selected_board = Board.query.filter(Board.name == board_string, Board.user_id == user_id).first()
     if not selected_board:

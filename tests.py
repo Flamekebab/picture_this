@@ -127,6 +127,11 @@ class ServerTests(unittest.TestCase):
 
     def test_server_3_create_board(self):
         """Can a registered user create a board?"""
+        # First test that it refuses if not logged in
+        result = self.client.post("/api/add_board")
+        self.assertEqual(result.status_code, 200)
+        self.assertIn(b"Log Your Bad Self In", result.data)
+
         with self.client.session_transaction() as session:
             session['user_id'] = 1
             session['username'] = 'Guppy'
@@ -141,7 +146,19 @@ class ServerTests(unittest.TestCase):
         self.assertIn(b"/upload</a>", result.data)
         self.assertNotIn(b"log in</a> to access this page", result.data)
 
-    def test_server_3_create_duplicate_board(self):
+    def test_server_4_log_out(self):
+        """Ensure logging out doesn't throw an error"""
+        with self.client.session_transaction() as session:
+            session['user_id'] = 1
+            session['username'] = 'Guppy'
+
+        result = self.client.get("/api/log_out")
+        self.assertEqual(result.status_code, 302)
+        with self.client.session_transaction() as session:
+            flash_messages = session['_flashes']
+        self.assertEqual(flash_messages[0][1], "Logout successful.")
+
+    def test_server_4_create_duplicate_board(self):
         """Does the app refuse to create a duplicate board?"""
         with self.client.session_transaction() as session:
             session['user_id'] = 1
@@ -177,6 +194,40 @@ class ServerTests(unittest.TestCase):
         result = self.client.post("/api/upload", data=form_data)
         self.assertIn(b"/board/Guppy/honey badgers", result.data)
 
+    def test_server_4_fail_to_upload(self):
+        """Does it stop us from uploading?"""
+        with self.client.session_transaction() as session:
+            session['user_id'] = 1
+            session['username'] = 'Guppy'
+
+        # Board 3 isn't one of the allowed boards
+        form_data = {
+            "board_id": 3,
+            "file-or-url": "url",
+            "url": "https://upload.wikimedia.org/wikipedia/commons/9/92/Manul1a.jpg",
+            "notes": "Testing uploads through the medium of pallas cats",
+            "private": False
+        }
+        result = self.client.post("/api/upload", data=form_data)
+        self.assertEqual(result.status_code, 302)
+
+        # This should only be possible through form manipulation:
+        form_data = {
+            "board_id": 1,
+            "file-or-url": "url",
+            "url": "",
+            "notes": "Testing uploads through the medium of pallas cats",
+            "private": False
+        }
+        result = self.client.post("/api/upload", data=form_data)
+        self.assertEqual(result.status_code, 302)
+
+        with self.client.session_transaction() as session:
+            # A list of tuples - e.g. [('message', 'Image deleted successfully')]
+            flash_messages = session['_flashes']
+        self.assertIn("You do not have permission to upload to that board!", flash_messages[0][1])
+        self.assertIn("Upload failed", flash_messages[1][1])
+
     def test_server_5_my_images_logged_in(self):
         """Does the My Images page load when logged in?"""
         with self.client.session_transaction() as session:
@@ -186,6 +237,10 @@ class ServerTests(unittest.TestCase):
         result = self.client.get("/my_images")
         self.assertEqual(result.status_code, 200)
         self.assertIn(b"pallas cats", result.data)
+
+    def test_server_5_serve_image_file(self):
+        result = self.client.get("/uploads/1.webp")
+        self.assertEqual(result.status_code, 200)
 
     def test_server_6_upload_from_file(self):
         """Can we upload from a file?"""
@@ -209,7 +264,65 @@ class ServerTests(unittest.TestCase):
             result = self.client.post("/api/upload", data=form_data)
         self.assertIn(b"/board/Guppy/honey badgers", result.data)
 
-    def test_server_7_delete_image(self):
+        # Test that it fails when supplied with an unsuitable file
+        file_path = "./demo_data.py"
+        with open(file_path, "rb") as file:
+            # Create a Werkzeug FileStorage object from the file
+            file_storage = FileStorage(file)
+            form_data = {
+                "board_id": 1,
+                "file-or-url": "file",
+                "url": "",
+                "notes": "How about the same picture again?",
+                "private": False,
+                "attached-file": file_storage
+            }
+            result = self.client.post("/api/upload", data=form_data)
+        self.assertEqual(result.status_code, 302)
+        with self.client.session_transaction() as session:
+            # A list of tuples - e.g. [('message', 'Image deleted successfully')]
+            flash_messages = session['_flashes']
+        self.assertIn("Upload failed", flash_messages[1][1])
+
+    # test_server_7 will contain sharing tests
+
+    def test_server_8_show_board(self):
+        """Show one of the user's boards, where appropriate"""
+        # This has to wait until after the board sharing tests
+
+        # Logged out
+        result = self.client.get("/board/Guppy/honey badgers")
+        self.assertEqual(result.status_code, 200)
+        self.assertIn(b"Log Your Bad Self In", result.data)
+
+        # Logged in
+        with self.client.session_transaction() as session:
+            session['user_id'] = 1
+            session['username'] = 'Guppy'
+
+        result = self.client.get("/board/Guppy/honey badgers")
+        self.assertEqual(result.status_code, 200)
+        self.assertIn(b"honey badger", result.data)
+
+    def test_server_8_show_boards(self):
+        """Show the user's boards, where appropriate"""
+        # This has to wait until after the board sharing tests
+
+        # Logged out
+        result = self.client.get("/boards")
+        self.assertEqual(result.status_code, 200)
+        self.assertIn(b"Log Your Bad Self In", result.data)
+
+        # Logged in
+        with self.client.session_transaction() as session:
+            session['user_id'] = 1
+            session['username'] = 'Guppy'
+
+        result = self.client.get("/boards")
+        self.assertEqual(result.status_code, 200)
+        self.assertIn(b"My Boards", result.data)
+
+    def test_server_9_delete_image(self):
         """Can we delete images with the appropriate credentials?"""
         # First without being logged in:
         self.client.get("/delete/1")
@@ -230,18 +343,28 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(flash_messages[0][1], "Login to delete images")
         self.assertEqual(flash_messages[1][1], "Image deleted successfully")
 
-    def test_server_8_delete_board(self):
-        """Can we delete a board?"""
-        with self.client.session_transaction() as session:
-            session['user_id'] = 1
-            session['username'] = 'Guppy'
-
-        result = self.client.get("/delete_board/Guppy/honey badgers")
+        # Try to delete an image that we shouldn't be able to:
+        result = self.client.get("/delete/3")
+        # This will generate the second flash message ("Failed to delete image")
         self.assertEqual(result.status_code, 302)
         with self.client.session_transaction() as session:
-            # A list of tuples - e.g. [('message', 'honey badgers deleted!')]
             flash_messages = session['_flashes']
-        self.assertEqual(flash_messages[0][1], "honey badgers deleted!")
+        self.assertEqual(flash_messages[2][1], "Failed to delete image")
+
+    # def test_server_10_delete_board(self):
+    #     """Can we delete a board with the appropriate credentials?"""
+    #
+    #     # Log in and test:
+    #     with self.client.session_transaction() as session:
+    #         session['user_id'] = 1
+    #         session['username'] = 'Guppy'
+    #
+    #     result = self.client.get("/delete_board/Guppy/honey badgers")
+    #     self.assertEqual(result.status_code, 302)
+    #     with self.client.session_transaction() as session:
+    #         flash_messages = session['_flashes']
+    #
+    #     self.assertEqual(flash_messages[0][1], "honey badgers deleted!")
 
     def tearDown(self):
         """Code to run after every test"""
