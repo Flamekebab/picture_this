@@ -134,6 +134,16 @@ class ServerTests(unittest.TestCase):
         result = self.client.post("/api/register_user", data=form_data)
         self.assertIn(b"/register</a>", result.data)
 
+        # We need to register another user for the later tests so might as well do it here
+        form_data = {
+            "username": "Loja",
+            "email": "loja@thecat.com",
+            "password": "vbadpw",
+        }
+        result = self.client.post("/api/register_user", data=form_data)
+        self.assertEqual(result.status_code, 200)
+        self.assertIn(b"Log Your Bad Self In", result.data)
+
     def test_server_3_login(self):
         """Attempt various logins"""
         form_data = {
@@ -325,7 +335,65 @@ class ServerTests(unittest.TestCase):
             flash_messages = session['_flashes']
         self.assertIn("Upload failed", flash_messages[1][1])
 
-    # test_server_7 will contain sharing tests
+    def test_server_6_share_board(self):
+        """Do the correct share board options populate?"""
+        # Logged out
+        result = self.client.get("/share_board/Guppy/honey badgers")
+        self.assertEqual(result.status_code, 200)
+        self.assertIn(b"Log Your Bad Self In", result.data)
+
+        # Logged in
+        with self.client.session_transaction() as session:
+            session['user_id'] = 1
+            session['username'] = 'Guppy'
+        result = self.client.get("/share_board/Guppy/honey badgers")
+        self.assertEqual(result.status_code, 200)
+        self.assertIn(b"Share a Board", result.data)
+
+    # TODO: Add other attempts to share that should fail
+    def test_server_7_share_board_form(self):
+        """Can we actually share boards, where appropriate?"""
+        form_data = {
+            "board_id": 1,
+            "user_id": 2,
+        }
+        # Logged out
+        result = self.client.post("/api/share_board", data=form_data)
+        self.assertEqual(result.status_code, 200)
+        self.assertIn(b"Log Your Bad Self In", result.data)
+
+        # Logged in
+        with self.client.session_transaction() as session:
+            session['user_id'] = 1
+            session['username'] = 'Guppy'
+
+        result = self.client.post("/api/share_board", data=form_data)
+        self.assertEqual(result.status_code, 302)
+        self.assertIn(b"boards</a>", result.data)
+        with self.client.session_transaction() as session:
+            flash_messages = session['_flashes']
+        self.assertIn("Shared honey badgers with Loja", flash_messages[0][1])
+
+    # TODO Uploading to shared boards
+    # TODO Unshare board
+    # def test_server_8_upload_page_with_shared_boards(self):
+    #     """Does the upload page show shared boards?"""
+    #     with self.client.session_transaction() as session:
+    #         session['user_id'] = 1
+    #         session['username'] = 'Guppy'
+    #     result = self.client.get("/upload/Guppy/honey badgers")
+    #     self.assertEqual(result.status_code, 200)
+    #     self.assertIn(b"Add a photo", result.data)
+    #
+    #     with self.client.session_transaction() as session:
+    #         session['user_id'] = 2
+    #         session['username'] = 'Loja'
+    #     result = self.client.get("/upload/Guppy/honey badgers")
+    #     self.assertEqual(result.status_code, 200)
+    #     # If the sharing code works properly Loja should now be able to upload to Guppy's board
+    #     self.assertIn(b"honey badgers", result.data)
+
+
 
     def test_server_8_show_board(self):
         """Show one of the user's boards, where appropriate"""

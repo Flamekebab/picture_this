@@ -115,10 +115,11 @@ python -m coverage html
 
 Rewritten by Flamekebab (as I'm not Cori!):
 
-1. Bugfixing
+1. More unit tests
 2. Tagging?
-3. Private images?
-4. Pagination and lazy loading?
+3. Sort out the CSS
+4. Private images?
+5. Pagination and lazy loading?
 
 ## About the developers :woman_technologist:
 

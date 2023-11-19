@@ -106,6 +106,7 @@ if __name__ == '__main__':
     # from server import app
     #
     # connect_to_db(app)
+    # print(User.query.filter(User.email == "cricket@thedog.com").first())
     # This file can be run to debug database queries
     # Y'know... here
     # image = Image.query.filter(Image.image_id == 2, Image.user_id == 1).first()

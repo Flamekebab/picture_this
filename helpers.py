@@ -159,12 +159,11 @@ def check_username(username):
 
 
 def check_email(email):
-    """Check whether given email exists in users table."""
-    try:
-        user = User.query.filter(User.email == email).first()
-    except sqlalchemy.exc.OperationalError:
-        user = None
-
+    """Check whether given email exists in users table.
+    :param (str) email: email address to match to user.
+    :return: User SQLAlchemy object or None
+    """
+    user = User.query.filter(User.email == email).first()
     return user
 
 
