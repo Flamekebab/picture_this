@@ -109,7 +109,7 @@ def get_board_ids_shared_with_user(user_id):
 def share_board_with_user(board_id, owner_user_id, target_user_id):
     """
     Add a user to a board's share_with list, assuming they can be added
-    :param (int) board_id: board to be shared with a user
+    :param (int) board_id: board to be shared with a user.
     :param (int) owner_user_id: user that owns this board
     :param (int) target_user_id: user to share the board with
     :return:
@@ -442,8 +442,15 @@ def delete_image(user_id, image_id, upload_dir="uploads"):
         return False
 
 
-# TODO fix the delete board functionality!
 def delete_board(user_id, board_string, upload_dir="uploads"):
+    """
+    Delete a board, assuming the calling user owns the board.
+    :param (int) user_id: board owner's user id
+    :param (str) board_string: name of the board
+    :param (str) upload_dir: where the images for the board live
+    :return: (bool)
+    """
+    logging.info(f"Board to deletion for [{board_string}] requested by [{User.query.get(user_id).username}]")
     selected_board = Board.query.filter(Board.name == board_string, Board.user_id == user_id).first()
     if not selected_board:
         return False

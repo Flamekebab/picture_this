@@ -128,7 +128,9 @@ def delete_board(selected_board, username):
     """Delete a board"""
 
     if 'user_id' in session:
-        if helpers.delete_board(session['user_id'], selected_board, upload_dir=app.config['UPLOAD_FOLDER']):
+        if helpers.get_user_id_by_username(username) != session['user_id']:
+            flash(f"You do not have permission to delete {username}'s board!")
+        elif helpers.delete_board(session['user_id'], selected_board, upload_dir=app.config['UPLOAD_FOLDER']):
             flash(f"{selected_board} deleted!")
         else:
             flash(f"Problem encountered deleting {selected_board}!")

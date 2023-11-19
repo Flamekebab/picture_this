@@ -42,7 +42,7 @@ class Board(db.Model):
 
     board_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     thumbnail = db.Column(db.String)
-    name = db.Column(db.String(15), nullable=False)
+    name = db.Column(db.String(50), nullable=False)
     icon = db.Column(db.String(50), nullable=False)
     hex_code = db.Column(db.String(15), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)

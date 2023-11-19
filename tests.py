@@ -10,6 +10,48 @@ os.environ['PT_TESTING_MODE'] = 'True'
 os.system('export PT_TESTING_MODE')
 from server import app
 from helpers import *
+from model import *
+
+
+class ModelTests(unittest.TestCase):
+    """Mainly so the coverage report looks pretty, to be honest"""
+
+    test_user = User(
+        user_id=1,
+        username="Guppy",
+        email="guppy@thecat.com",
+        password_hashed=User.get_hash("badpw"))
+    test_board = Board(
+        board_id=1,
+        name="honey badgers",
+        icon="fas fa-badger-honey",
+        hex_code="#FFC0CB",
+        user_id=1)
+    test_image = Image(
+        image_id=1,
+        thumbnail=1,
+        url="https://upload.wikimedia.org/wikipedia/commons/9/92/Manul1a.jpg",
+        file_extension=".webp",
+        notes="Testing uploads through the medium of pallas cats",
+        private=False,
+        user_id=1,
+        board_id=1,
+    )
+
+    def test_user_repr(self):
+        """Does the User class' custom repr() work?"""
+        user = "<User user_id=1, username=Guppy, email=guppy@thecat.com>"
+        self.assertEqual(repr(self.test_user), user)
+
+    def test_board_repr(self):
+        """Does the Board class' custom repr() work?"""
+        board = "<Board board_id=1, name=honey badgers>"
+        self.assertEqual(repr(self.test_board), board)
+
+    def test_image_repr(self):
+        """Does the Image class' custom repr() work?"""
+        image = "<Image image_id=1, url=https://upload.wikimedia.org/wikipedia/commons/9/92/Manul1a.jpg>"
+        self.assertEqual(repr(self.test_image), image)
 
 
 class ServerTests(unittest.TestCase):
@@ -223,7 +265,6 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(result.status_code, 302)
 
         with self.client.session_transaction() as session:
-            # A list of tuples - e.g. [('message', 'Image deleted successfully')]
             flash_messages = session['_flashes']
         self.assertIn("You do not have permission to upload to that board!", flash_messages[0][1])
         self.assertIn("Upload failed", flash_messages[1][1])
@@ -322,7 +363,7 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(result.status_code, 200)
         self.assertIn(b"My Boards", result.data)
 
-    def test_server_9_delete_image(self):
+    def test_server_9_1_delete_image(self):
         """Can we delete images with the appropriate credentials?"""
         # First without being logged in:
         self.client.get("/delete/1")
@@ -351,20 +392,39 @@ class ServerTests(unittest.TestCase):
             flash_messages = session['_flashes']
         self.assertEqual(flash_messages[2][1], "Failed to delete image")
 
-    # def test_server_10_delete_board(self):
-    #     """Can we delete a board with the appropriate credentials?"""
-    #
-    #     # Log in and test:
-    #     with self.client.session_transaction() as session:
-    #         session['user_id'] = 1
-    #         session['username'] = 'Guppy'
-    #
-    #     result = self.client.get("/delete_board/Guppy/honey badgers")
-    #     self.assertEqual(result.status_code, 302)
-    #     with self.client.session_transaction() as session:
-    #         flash_messages = session['_flashes']
-    #
-    #     self.assertEqual(flash_messages[0][1], "honey badgers deleted!")
+    def test_server_9_2_delete_board(self):
+        """Can we delete a board with the appropriate credentials?"""
+        # Not logged in
+        result = self.client.get("/delete_board/Guppy/honey badgers")
+        self.assertEqual(result.status_code, 200)
+        self.assertIn(b"Log Your Bad Self In", result.data)
+
+        # Try to delete someone else's board
+        with self.client.session_transaction() as session:
+            session['user_id'] = 2
+            session['username'] = 'Loja'
+        result = self.client.get("/delete_board/Guppy/honey badgers")
+        self.assertEqual(result.status_code, 302)
+
+        # Log in as Guppy and test:
+        with self.client.session_transaction() as session:
+            session['user_id'] = 1
+            session['username'] = 'Guppy'
+        # Try to delete a board that doesn't exist
+        result = self.client.get("/delete_board/Guppy/invalid board")
+        self.assertEqual(result.status_code, 302)
+
+        with self.client.session_transaction() as session:
+            session['user_id'] = 1
+            session['username'] = 'Guppy'
+        result = self.client.get("/delete_board/Guppy/honey badgers")
+        self.assertEqual(result.status_code, 302)
+        with self.client.session_transaction() as session:
+            flash_messages = session['_flashes']
+
+        self.assertEqual(flash_messages[0][1], "You do not have permission to delete Guppy's board!")
+        self.assertEqual(flash_messages[1][1], "Problem encountered deleting invalid board!")
+        self.assertEqual(flash_messages[2][1], "honey badgers deleted!")
 
     def tearDown(self):
         """Code to run after every test"""
@@ -414,10 +474,18 @@ class HelperTests(unittest.TestCase):
         self.assertEqual(user_list[1].email, "loja@thecat.com")
 
     def test_helpers_1_upload_image_invalid_type(self):
-        self.assertFalse(helpers.upload_image("https://pt.test/invalid.image", "", 1, 1))
+        self.assertFalse(helpers.upload_image("https://pt.test/invalid.image",
+                                              "",
+                                              1,
+                                              1,
+                                              upload_dir="test_uploads"))
 
     def test_helpers_1_upload_image_invalid_url(self):
-        self.assertFalse(helpers.upload_image("https://upload.wikimedia.org/Manul1a.jpg", "", 1, 1))
+        self.assertFalse(helpers.upload_image("https://upload.wikimedia.org/Manul1a.jpg",
+                                              "",
+                                              1,
+                                              1,
+                                              upload_dir="test_uploads"))
 
     def test_helpers_1_upload_image_file(self):
         class InputImage:
@@ -434,7 +502,9 @@ class HelperTests(unittest.TestCase):
                                               "This file is the wrong type",
                                               1,
                                               1,
-                                              file_or_url="file"))
+                                              file_or_url="file",
+                                              upload_dir="test_uploads")
+                         )
 
         input_image = InputImage(
             filename="valid.jpg")
@@ -442,7 +512,10 @@ class HelperTests(unittest.TestCase):
                                               "This file doesn't save",
                                               1,
                                               1,
-                                              file_or_url="file"))
+                                              file_or_url="file",
+                                              upload_dir="test_uploads"
+                                              )
+                         )
 
     @patch('os.path.getsize')
     def test_helpers_1_webp_if_larger(self, mock_getsize):
@@ -454,7 +527,9 @@ class HelperTests(unittest.TestCase):
         self.assertTrue(helpers.upload_image("https://upload.wikimedia.org/wikipedia/commons/9/92/Manul1a.jpg",
                                              "Testing uploads through the medium of pallas cats",
                                              1,
-                                             1))
+                                             1,
+                                             upload_dir="test_uploads")
+                        )
 
     def test_helpers_1_get_user_id_by_username(self):
         user_id = helpers.get_user_id_by_username("Guppy")
@@ -471,7 +546,7 @@ class HelperTests(unittest.TestCase):
         self.assertFalse(helpers.delete_image(1, 3))
 
     def test_helpers_1_delete_board_unsuccessfully(self):
-        self.assertFalse(helpers.delete_board(1, 3))
+        self.assertFalse(helpers.delete_board(1, "not a board"))
 
     def test_helpers_2_board_images_for_user_found(self):
         self.assertEqual(len(helpers.board_images_for_user(1, "honey badgers")), 1)
@@ -493,7 +568,8 @@ class HelperTests(unittest.TestCase):
         helpers.upload_image("https://upload.wikimedia.org/wikipedia/commons/9/92/Manul1a.jpg",
                              "Same image but different board and user",
                              2,
-                             2)
+                             2,
+                             upload_dir="test_uploads")
         self.assertFalse(helpers.board_thumbnail_set(1, 2))
 
     def test_helpers_3_get_board_ids_shared_with_user_empty(self):
@@ -526,6 +602,9 @@ class HelperTests(unittest.TestCase):
     def test_helpers_7_unshare_board_with_user(self):
         # Combining this with the above test raises an sqlalchemy.orm.exc.StaleDataError for some reason
         self.assertTrue(helpers.unshare_board_with_user(1, 2))
+
+    def test_helpers_8_delete_board(self):
+        self.assertTrue(helpers.delete_board(1, "honey badgers", upload_dir="test_uploads"))
 
     def tearDown(self):
         """Code to run after every test"""
