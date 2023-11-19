@@ -137,8 +137,8 @@ def share_board_with_user(board_id, owner_user_id, target_user_id):
 def unshare_board_with_user(board_id, target_user_id):
     """
     Remove a user from a board's shared_with list
-    :param board_id: (int) board to remove a guest from
-    :param target_user_id: user_id for the guest
+    :param (int) board_id: board to remove a guest from
+    :param (int) target_user_id: user_id for the guest
     :return:
     """
     board = Board.query.get(board_id)

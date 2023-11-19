@@ -193,13 +193,10 @@ def un_share_board(owner_username, selected_board, user_to_remove):
         elif accessing_user.user_id == target_user.user_id:
             # If they're in the guest list they can remove themselves
             if accessing_user.username in helpers.get_shared_with(board_id, owner.user_id):
-                if helpers.unshare_board_with_user(board_id, accessing_user.user_id):
-                    flash(f"You left {selected_board}")
-                    # Redirect them to their boards page
-                    return redirect(url_for("show_boards_page"))
-                else:
-                    flash(f"Unable to leave {selected_board}")
-                    return redirect(f"/board/{owner_username}/{selected_board}")
+                helpers.unshare_board_with_user(board_id, accessing_user.user_id)
+                flash(f"You left {selected_board}")
+                # Redirect them to their boards page
+                return redirect(url_for("show_boards_page"))
             else:
                 flash(f"I don't think you're allowed to do that...")
                 return redirect(f"/board/{owner_username}/{selected_board}")

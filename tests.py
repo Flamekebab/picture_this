@@ -134,11 +134,20 @@ class ServerTests(unittest.TestCase):
         result = self.client.post("/api/register_user", data=form_data)
         self.assertIn(b"/register</a>", result.data)
 
-        # We need to register another user for the later tests so might as well do it here
+        # We need to register another couple of users for the later tests so might as well do it here
         form_data = {
             "username": "Loja",
             "email": "loja@thecat.com",
             "password": "vbadpw",
+        }
+        result = self.client.post("/api/register_user", data=form_data)
+        self.assertEqual(result.status_code, 200)
+        self.assertIn(b"Log Your Bad Self In", result.data)
+
+        form_data = {
+            "username": "Cori",
+            "email": "cori@picturethis.com",
+            "password": "pwwwww",
         }
         result = self.client.post("/api/register_user", data=form_data)
         self.assertEqual(result.status_code, 200)
@@ -279,6 +288,12 @@ class ServerTests(unittest.TestCase):
         self.assertIn("You do not have permission to upload to that board!", flash_messages[0][1])
         self.assertIn("Upload failed", flash_messages[1][1])
 
+    # def test_server_4_unshare_logged_out(self):
+        # # Not logged in
+        # result = self.client.get("/delete_board/Guppy/honey badgers")
+        # self.assertEqual(result.status_code, 200)
+        # self.assertIn(b"Log Your Bad Self In", result.data)
+
     def test_server_5_my_images_logged_in(self):
         """Does the My Images page load when logged in?"""
         with self.client.session_transaction() as session:
@@ -350,15 +365,11 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(result.status_code, 200)
         self.assertIn(b"Share a Board", result.data)
 
-    # TODO: Add other attempts to share that should fail
     def test_server_7_share_board_form(self):
         """Can we actually share boards, where appropriate?"""
-        form_data = {
-            "board_id": 1,
-            "user_id": 2,
-        }
+
         # Logged out
-        result = self.client.post("/api/share_board", data=form_data)
+        result = self.client.post("/api/share_board")
         self.assertEqual(result.status_code, 200)
         self.assertIn(b"Log Your Bad Self In", result.data)
 
@@ -367,33 +378,55 @@ class ServerTests(unittest.TestCase):
             session['user_id'] = 1
             session['username'] = 'Guppy'
 
-        result = self.client.post("/api/share_board", data=form_data)
+        # Try to target a board that doesn't exist (form manipulation)
+        invalid_form_data_1 = {
+            "board_id": 3,
+            "user_id": 2,
+        }
+        result = self.client.post("/api/share_board", data=invalid_form_data_1)
+        self.assertEqual(result.status_code, 302)
+        self.assertIn(b"boards</a>", result.data)
+
+        # Try to target a user that doesn't exist (form manipulation)
+        invalid_form_data_2 = {
+            "board_id": 1,
+            "user_id": 4,
+        }
+        result = self.client.post("/api/share_board", data=invalid_form_data_2)
+        self.assertEqual(result.status_code, 302)
+        self.assertIn(b"boards</a>", result.data)
+
+        valid_form_data = {
+            "board_id": 1,
+            "user_id": 2,
+        }
+        result = self.client.post("/api/share_board", data=valid_form_data)
         self.assertEqual(result.status_code, 302)
         self.assertIn(b"boards</a>", result.data)
         with self.client.session_transaction() as session:
             flash_messages = session['_flashes']
-        self.assertIn("Shared honey badgers with Loja", flash_messages[0][1])
+
+        self.assertIn("You don't have permission to share that board...", flash_messages[0][1])
+        self.assertIn("Cannot share board with that user.", flash_messages[1][1])
+        self.assertIn("Shared honey badgers with Loja", flash_messages[2][1])
 
     # TODO Uploading to shared boards
-    # TODO Unshare board
-    # def test_server_8_upload_page_with_shared_boards(self):
-    #     """Does the upload page show shared boards?"""
-    #     with self.client.session_transaction() as session:
-    #         session['user_id'] = 1
-    #         session['username'] = 'Guppy'
-    #     result = self.client.get("/upload/Guppy/honey badgers")
-    #     self.assertEqual(result.status_code, 200)
-    #     self.assertIn(b"Add a photo", result.data)
-    #
-    #     with self.client.session_transaction() as session:
-    #         session['user_id'] = 2
-    #         session['username'] = 'Loja'
-    #     result = self.client.get("/upload/Guppy/honey badgers")
-    #     self.assertEqual(result.status_code, 200)
-    #     # If the sharing code works properly Loja should now be able to upload to Guppy's board
-    #     self.assertIn(b"honey badgers", result.data)
+    def test_server_8_upload_page_with_shared_boards(self):
+        """Does the upload page show shared boards?"""
+        with self.client.session_transaction() as session:
+            session['user_id'] = 1
+            session['username'] = 'Guppy'
+        result = self.client.get("/upload/Guppy/honey badgers")
+        self.assertEqual(result.status_code, 200)
+        self.assertIn(b"Add a photo", result.data)
 
-
+        with self.client.session_transaction() as session:
+            session['user_id'] = 2
+            session['username'] = 'Loja'
+        result = self.client.get("/upload/Guppy/honey badgers")
+        self.assertEqual(result.status_code, 200)
+        # If the sharing code works properly Loja should now be able to upload to Guppy's board
+        self.assertIn(b"honey badgers", result.data)
 
     def test_server_8_show_board(self):
         """Show one of the user's boards, where appropriate"""
@@ -408,6 +441,15 @@ class ServerTests(unittest.TestCase):
         with self.client.session_transaction() as session:
             session['user_id'] = 1
             session['username'] = 'Guppy'
+
+        result = self.client.get("/board/Guppy/honey badgers")
+        self.assertEqual(result.status_code, 200)
+        self.assertIn(b"honey badger", result.data)
+
+        # Logged in as a user with whom the board is shared
+        with self.client.session_transaction() as session:
+            session['user_id'] = 2
+            session['username'] = 'Loja'
 
         result = self.client.get("/board/Guppy/honey badgers")
         self.assertEqual(result.status_code, 200)
@@ -431,7 +473,76 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(result.status_code, 200)
         self.assertIn(b"My Boards", result.data)
 
-    def test_server_9_1_delete_image(self):
+        # Logged in as a user with only shared boards
+        with self.client.session_transaction() as session:
+            session['user_id'] = 2
+            session['username'] = 'Loja'
+
+        result = self.client.get("/boards")
+        self.assertEqual(result.status_code, 200)
+        self.assertIn(b"honey badgers", result.data)
+
+    def test_server_9_1_unshare_board(self):
+        """Can we unshare with the appropriate credentials?"""
+        # Not logged in
+        result = self.client.get("/unshare_board/Guppy/honey badgers/Loja")
+        self.assertEqual(result.status_code, 200)
+        self.assertIn(b"Log Your Bad Self In", result.data)
+
+        with self.client.session_transaction() as session:
+            session['user_id'] = 3
+            session['username'] = 'Cori'
+        result = self.client.get("/unshare_board/Guppy/honey badgers/Loja")
+        self.assertEqual(result.status_code, 302)
+
+        # unshare board
+        with self.client.session_transaction() as session:
+            session['user_id'] = 1
+            session['username'] = 'Guppy'
+        result = self.client.get("/unshare_board/Guppy/honey badgers/Loja")
+        self.assertEqual(result.status_code, 302)
+
+        # Try to unshare a second time to throw an appropriate error
+        with self.client.session_transaction() as session:
+            session['user_id'] = 1
+            session['username'] = 'Guppy'
+        result = self.client.get("/unshare_board/Guppy/honey badgers/Loja")
+        self.assertEqual(result.status_code, 302)
+
+        # Share the board again so that further unsharing can be tested
+        valid_form_data = {
+            "board_id": 1,
+            "user_id": 2,
+        }
+        result = self.client.post("/api/share_board", data=valid_form_data)
+        self.assertEqual(result.status_code, 302)
+        self.assertIn(b"boards</a>", result.data)
+
+        # Try to leave the board as Loja
+        with self.client.session_transaction() as session:
+            session['user_id'] = 2
+            session['username'] = 'Loja'
+        result = self.client.get("/unshare_board/Guppy/honey badgers/Loja")
+        self.assertEqual(result.status_code, 302)
+
+        # Try to leave a second time to check for correct error
+        with self.client.session_transaction() as session:
+            session['user_id'] = 2
+            session['username'] = 'Loja'
+        result = self.client.get("/unshare_board/Guppy/honey badgers/Loja")
+        self.assertEqual(result.status_code, 302)
+
+        with self.client.session_transaction() as session:
+            flash_messages = session['_flashes']
+
+        self.assertEqual(flash_messages[0][1], "Error - are you sure you have permission to unshare/leave this board?")
+        self.assertEqual(flash_messages[1][1], "Removed Loja from honey badgers")
+        self.assertEqual(flash_messages[2][1], "Unable to remove Loja from honey badgers")
+        self.assertIn(flash_messages[3][1], "Shared honey badgers with Loja")
+        self.assertIn(flash_messages[4][1], "You left honey badgers")
+        self.assertIn(flash_messages[5][1], "I don't think you're allowed to do that...")
+
+    def test_server_9_2_delete_image(self):
         """Can we delete images with the appropriate credentials?"""
         # First without being logged in:
         self.client.get("/delete/1")
@@ -460,7 +571,7 @@ class ServerTests(unittest.TestCase):
             flash_messages = session['_flashes']
         self.assertEqual(flash_messages[2][1], "Failed to delete image")
 
-    def test_server_9_2_delete_board(self):
+    def test_server_9_3_delete_board(self):
         """Can we delete a board with the appropriate credentials?"""
         # Not logged in
         result = self.client.get("/delete_board/Guppy/honey badgers")
